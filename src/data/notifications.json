@@ -1,0 +1,222 @@
+[
+  {
+    "id": "N101",
+    "recipientId": "U101",
+    "recipientRole": "user",
+    "title": "Ride Accepted",
+    "message": "Driver Arun Prakash accepted your Car ride to T Nagar (TN01AB1234).",
+    "rideId": "R101",
+    "type": "ride_status",
+    "read": false,
+    "createdAt": "2026-08-26T10:32:00.000Z"
+  },
+  {
+    "id": "N102",
+    "recipientId": "D101",
+    "recipientRole": "driver",
+    "title": "New Ride Assigned",
+    "message": "You accepted ride R101 for Ravi Kumar from Chennai Central.",
+    "rideId": "R101",
+    "type": "ride_assignment",
+    "read": false,
+    "createdAt": "2026-08-26T10:32:00.000Z"
+  },
+  {
+    "id": "N103",
+    "recipientId": "U102",
+    "recipientRole": "user",
+    "title": "Ride Started",
+    "message": "Your Bike ride to Velachery Phoenix Mall with Priya has started.",
+    "rideId": "R102",
+    "type": "ride_status",
+    "read": false,
+    "createdAt": "2026-08-26T11:25:00.000Z"
+  },
+  {
+    "id": "N104",
+    "recipientId": "D102",
+    "recipientRole": "driver",
+    "title": "Trip in Progress",
+    "message": "Ongoing trip R102 with Ananya Sharma. Drive safely.",
+    "rideId": "R102",
+    "type": "safety_alert",
+    "read": true,
+    "createdAt": "2026-08-26T11:25:00.000Z"
+  },
+  {
+    "id": "N105",
+    "recipientId": "D101",
+    "recipientRole": "driver",
+    "title": "New Ride Request",
+    "message": "Car ride requested by Karthik Raja from Anna Nagar (₹221).",
+    "rideId": "R103",
+    "type": "new_request",
+    "read": false,
+    "createdAt": "2026-08-26T11:45:00.000Z"
+  },
+  {
+    "id": "N106",
+    "recipientId": "D103",
+    "recipientRole": "driver",
+    "title": "New Ride Request",
+    "message": "Car ride requested by Karthik Raja from Anna Nagar (₹221).",
+    "rideId": "R103",
+    "type": "new_request",
+    "read": false,
+    "createdAt": "2026-08-26T11:45:00.000Z"
+  },
+  {
+    "id": "N107",
+    "recipientId": "D104",
+    "recipientRole": "driver",
+    "title": "New Bike Request",
+    "message": "Bike ride requested by Sneha Reddy from OMR Tech Park (₹86).",
+    "rideId": "R104",
+    "type": "new_request",
+    "read": false,
+    "createdAt": "2026-08-26T12:00:00.000Z"
+  },
+  {
+    "id": "N108",
+    "recipientId": "U105",
+    "recipientRole": "user",
+    "title": "Payment Successful",
+    "message": "Payment of ₹272 for ride R105 completed via UPI.",
+    "rideId": "R105",
+    "type": "payment_success",
+    "read": true,
+    "createdAt": "2026-08-25T17:15:00.000Z"
+  },
+  {
+    "id": "N109",
+    "recipientId": "D103",
+    "recipientRole": "driver",
+    "title": "Payment Received",
+    "message": "₹272 credited for ride R105 from Vikram Sethi.",
+    "rideId": "R105",
+    "type": "payment_success",
+    "read": true,
+    "createdAt": "2026-08-25T17:15:00.000Z"
+  },
+  {
+    "id": "N110",
+    "recipientId": "U101",
+    "recipientRole": "user",
+    "title": "Ride Completed",
+    "message": "Your ride R106 to Egmore has completed. Thank you for riding!",
+    "rideId": "R106",
+    "type": "ride_status",
+    "read": true,
+    "createdAt": "2026-08-25T09:28:00.000Z"
+  },
+  {
+    "id": "N111",
+    "recipientId": "D104",
+    "recipientRole": "driver",
+    "title": "5-Star Rating Received",
+    "message": "Ravi Kumar rated you 5 stars: 'Quick ride during heavy traffic!'",
+    "rideId": "R106",
+    "type": "rating",
+    "read": true,
+    "createdAt": "2026-08-25T09:30:00.000Z"
+  },
+  {
+    "id": "N112",
+    "recipientId": "U106",
+    "recipientRole": "user",
+    "title": "Ride Completed",
+    "message": "Your ride R107 with Kavitha Rajan completed successfully.",
+    "rideId": "R107",
+    "type": "ride_status",
+    "read": true,
+    "createdAt": "2026-08-25T14:35:00.000Z"
+  },
+  {
+    "id": "N113",
+    "recipientId": "U107",
+    "recipientRole": "user",
+    "title": "Payment Successful",
+    "message": "Payment of ₹113 for ride R108 completed via Card.",
+    "rideId": "R108",
+    "type": "payment_success",
+    "read": true,
+    "createdAt": "2026-08-24T08:48:00.000Z"
+  },
+  {
+    "id": "N114",
+    "recipientId": "U108",
+    "recipientRole": "user",
+    "title": "Ride Cancelled",
+    "message": "Your ride request R109 has been cancelled.",
+    "rideId": "R109",
+    "type": "ride_status",
+    "read": true,
+    "createdAt": "2026-08-24T18:05:00.000Z"
+  },
+  {
+    "id": "N115",
+    "recipientId": "U101",
+    "recipientRole": "user",
+    "title": "Ride Completed",
+    "message": "Your ride R110 with Arun completed. Payment of ₹152 received via UPI.",
+    "rideId": "R110",
+    "type": "ride_status",
+    "read": true,
+    "createdAt": "2026-08-23T18:15:00.000Z"
+  },
+  {
+    "id": "N116",
+    "recipientId": "D101",
+    "recipientRole": "driver",
+    "title": "5-Star Rating Received",
+    "message": "Ravi Kumar rated you 5 stars: 'Excellent trip with Arun, very courteous.'",
+    "rideId": "R110",
+    "type": "rating",
+    "read": true,
+    "createdAt": "2026-08-23T18:20:00.000Z"
+  },
+  {
+    "id": "N117",
+    "recipientId": "ADM001",
+    "recipientRole": "admin",
+    "title": "System Peak Alert",
+    "message": "High booking volume detected in Central Chennai area (15 active bookings).",
+    "rideId": null,
+    "type": "system_alert",
+    "read": false,
+    "createdAt": "2026-08-26T11:00:00.000Z"
+  },
+  {
+    "id": "N118",
+    "recipientId": "ADM001",
+    "recipientRole": "admin",
+    "title": "New Driver Registration",
+    "message": "Ganesh Raman registered as a new Bike driver (TN25UV7890).",
+    "rideId": null,
+    "type": "driver_alert",
+    "read": true,
+    "createdAt": "2026-08-24T09:00:00.000Z"
+  },
+  {
+    "id": "N119",
+    "recipientId": "U104",
+    "recipientRole": "user",
+    "title": "Payment Successful",
+    "message": "₹298 paid for ride R114 via UPI. Invoice is ready.",
+    "rideId": "R114",
+    "type": "payment_success",
+    "read": true,
+    "createdAt": "2026-08-21T19:25:00.000Z"
+  },
+  {
+    "id": "N120",
+    "recipientId": "U101",
+    "recipientRole": "user",
+    "title": "Welcome to Ride Sharing System",
+    "message": "Welcome Ravi! Get ₹50 off on your first car or bike booking.",
+    "rideId": null,
+    "type": "promo",
+    "read": true,
+    "createdAt": "2025-01-15T10:00:00.000Z"
+  }
+]
