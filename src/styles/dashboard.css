@@ -1,0 +1,223 @@
+/* =========================================================
+   Dashboard Stylesheet - dashboard.css
+   ========================================================= */
+
+.dashboard-hero-banner {
+  background: linear-gradient(135deg, #059669, #0f766e);
+  color: #ffffff;
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: var(--shadow-lg);
+  margin-bottom: 28px;
+}
+
+.driver-hero-banner {
+  background: linear-gradient(135deg, #0f172a, #1e1b4b);
+  color: #ffffff;
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: var(--shadow-lg);
+  margin-bottom: 28px;
+}
+
+.admin-hero-banner {
+  background: linear-gradient(135deg, #4c1d95, #1e1b4b);
+  color: #ffffff;
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: var(--shadow-lg);
+  margin-bottom: 28px;
+}
+
+.hero-tag {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.hero-title {
+  font-size: 1.875rem;
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+
+.hero-desc {
+  font-size: 0.875rem;
+  opacity: 0.85;
+  margin-top: 4px;
+}
+
+/* Stats Cards Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.stats-grid-6 {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.stat-card {
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.stat-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.stat-card-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-card-value {
+  font-size: 1.875rem;
+  font-weight: 900;
+  color: var(--text-main);
+  line-height: 1.1;
+}
+
+.stat-card-footer {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+/* Active Trip Alert Banner */
+.active-trip-banner {
+  background-color: var(--navy);
+  color: #ffffff;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-xl);
+  margin-bottom: 28px;
+}
+
+.active-trip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+}
+
+.active-trip-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.active-trip-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background-color: rgba(16, 185, 129, 0.2);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.active-trip-id {
+  font-family: monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.active-trip-route {
+  font-size: 1.125rem;
+  font-weight: 800;
+  margin-top: 2px;
+}
+
+.active-trip-details {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  font-size: 0.8125rem;
+}
+
+.trip-detail-label {
+  color: var(--text-light);
+  font-size: 0.6875rem;
+  display: block;
+}
+
+.trip-detail-val {
+  font-weight: 700;
+  color: #ffffff;
+  margin-top: 2px;
+}
+
+.otp-val {
+  font-family: monospace;
+  font-size: 1.125rem;
+  color: #34d399;
+}
+
+/* Online Availability Button */
+.btn-online-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+  transition: all 0.2s;
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-online-toggle.online {
+  background-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.3);
+}
+.btn-online-toggle.online:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-online-toggle.offline {
+  background-color: var(--rose);
+  box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.3);
+}
+.btn-online-toggle.offline:hover {
+  background-color: var(--rose-text);
+}

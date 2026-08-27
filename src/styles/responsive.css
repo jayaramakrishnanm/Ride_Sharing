@@ -1,0 +1,143 @@
+/* =========================================================
+   Responsive Breakpoints - responsive.css
+   ========================================================= */
+
+/* Desktop & Laptop (Default) */
+
+/* Tablets & Small Laptops (max-width: 1024px) */
+@media (max-width: 1024px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop.open {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 85;
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+
+  .sidebar-close-btn {
+    display: block;
+  }
+
+  .navbar-menu-toggle {
+    display: block;
+  }
+
+  .main-content-with-sidebar {
+    margin-left: 0;
+    width: 100%;
+    padding: 16px;
+  }
+
+  .booking-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stats-grid-6 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .charts-grid, .exports-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .trip-info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mobile Devices (max-width: 768px) */
+@media (max-width: 768px) {
+  .navbar-nav {
+    display: none;
+  }
+
+  .navbar-brand-sub {
+    display: none;
+  }
+
+  .profile-info {
+    display: none;
+  }
+
+  .dashboard-hero-banner, .driver-hero-banner, .admin-hero-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 24px 20px;
+  }
+
+  .hero-title {
+    font-size: 1.5rem;
+  }
+
+  .active-trip-details {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .booking-triplet-row {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stepper-track {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+  }
+
+  .step-icon-circle {
+    width: 32px;
+    height: 32px;
+    font-size: 0.75rem;
+  }
+
+  .step-name {
+    font-size: 0.5625rem;
+  }
+
+  .admin-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-box-wrap {
+    max-width: 100%;
+  }
+
+  .filter-selects-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Small Mobile (max-width: 480px) */
+@media (max-width: 480px) {
+  .stats-grid, .stats-grid-6 {
+    grid-template-columns: 1fr;
+  }
+
+  .vehicle-selector-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-selector-row, .payment-methods-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .demo-quick-grid {
+    grid-template-columns: 1fr;
+  }
+}
