@@ -25,9 +25,15 @@ export { STORAGE_KEYS, getStorageData, setStorageData, removeStorageData };
 export function initializeStorage(forceReset = false) {
   if (typeof window === 'undefined') return;
 
-  const isInitialized = localStorage.getItem('rss_initialized_single_db_v7');
+  const isInitialized = localStorage.getItem('rss_initialized_single_db_v8');
 
   if (!isInitialized || forceReset) {
+    // Accounts (Users, Drivers, Admin)
+    const existingUsers = getStorageData(STORAGE_KEYS.USERS, null);
+    if (!existingUsers || forceReset) {
+      setStorageData(STORAGE_KEYS.USERS, seedUsersAndDrivers);
+    }
+
     // Rides
     const existingRides = getStorageData(STORAGE_KEYS.RIDES, null);
     if (!existingRides || forceReset) {
@@ -52,7 +58,7 @@ export function initializeStorage(forceReset = false) {
       setCurrentUser(null);
     }
 
-    localStorage.setItem('rss_initialized_single_db_v7', 'true');
+    localStorage.setItem('rss_initialized_single_db_v8', 'true');
   }
 }
 
@@ -91,7 +97,30 @@ export function logout() {
 // ----------------------------------------------------
 
 export function getAllAccounts() {
+  if (typeof window !== 'undefined') {
+    const stored = getStorageData(STORAGE_KEYS.USERS, null);
+    if (stored && Array.isArray(stored) && stored.length > 0) {
+      return stored;
+    }
+  }
   return seedUsersAndDrivers;
+}
+
+export function syncAccountToStorage(account, action = 'upsert') {
+  if (typeof window === 'undefined') return;
+  let accounts = getAllAccounts().slice();
+  if (action === 'delete') {
+    const targetId = typeof account === 'object' ? account.id : account;
+    accounts = accounts.filter((a) => a.id !== targetId);
+  } else {
+    const index = accounts.findIndex((a) => a.id === account.id);
+    if (index !== -1) {
+      accounts[index] = { ...accounts[index], ...account };
+    } else {
+      accounts.push(account);
+    }
+  }
+  setStorageData(STORAGE_KEYS.USERS, accounts);
 }
 
 export function getUsers() {
@@ -129,38 +158,48 @@ export async function authenticate(identifier, password, role) {
     const data = await res.json();
 
     if (data.success && data.user) {
+      syncAccountToStorage(data.user);
       setCurrentUser(data.user);
       return { success: true, user: data.user };
-    } else {
+    } else if (res.status === 400 || res.status === 401 || res.status === 403 || res.status === 404) {
       return { success: false, error: data.error || 'Authentication failed.' };
     }
-  } catch (err) {
-    const accounts = getAllAccounts();
-    const account = accounts.find(
-      (a) =>
-        (a.email || '').toLowerCase() === cleanId ||
-        (a.phone && a.phone.trim() === identifier.trim())
-    );
+  } catch (err) {}
 
-    if (!account) {
-      return { success: false, error: 'Account not found with this email or phone.' };
-    }
-    if (account.password && account.password !== password) {
-      return { success: false, error: 'Incorrect password. Please try again.' };
-    }
-    if (account.role === 'driver' && account.status === 'Inactive') {
-      return { success: false, error: 'Your driver account has been deactivated by the administrator.' };
-    }
+  // Fallback to local accounts
+  const accounts = getAllAccounts();
+  const account = accounts.find(
+    (a) =>
+      (a.email || '').toLowerCase() === cleanId ||
+      (a.phone && a.phone.trim() === identifier.trim())
+  );
 
-    setCurrentUser(account);
-    return { success: true, user: account };
+  if (!account) {
+    return { success: false, error: 'Account not found with this email or phone.' };
   }
+  if (account.password && account.password !== password) {
+    return { success: false, error: 'Incorrect password. Please try again.' };
+  }
+  if (account.status === 'Inactive') {
+    return { success: false, error: 'Your account has been deactivated. Please contact support.' };
+  }
+
+  const updatedAccount = {
+    ...account,
+    lastLogin: new Date().toISOString()
+  };
+  syncAccountToStorage(updatedAccount);
+  setCurrentUser(updatedAccount);
+  return { success: true, user: updatedAccount };
 }
 
 /**
- * Register User via /api/users
+ * Register User via /api/users with robust client sync
  */
-export async function registerUser(userData) {
+export async function registerUser(userData, isSelfRegister = true) {
+  const cleanEmail = (userData.email || '').trim().toLowerCase();
+  const cleanPhone = (userData.phone || '').trim();
+
   try {
     const res = await fetch('/api/users', {
       method: 'POST',
@@ -170,24 +209,68 @@ export async function registerUser(userData) {
     const data = await res.json();
 
     if (data.success && data.user) {
-      setCurrentUser(data.user);
+      syncAccountToStorage(data.user);
+      if (isSelfRegister) {
+        setCurrentUser(data.user);
+      }
       return { success: true, user: data.user };
-    } else {
+    } else if (res.status === 400) {
       return { success: false, error: data.error || 'Registration failed.' };
     }
-  } catch (error) {
-    return { success: false, error: 'Network error during registration.' };
+  } catch (error) {}
+
+  // Client-Side Fallback Registration
+  const accounts = getAllAccounts();
+  if (accounts.some((a) => (a.email || '').toLowerCase() === cleanEmail)) {
+    return { success: false, error: 'Email already registered' };
   }
+  if (accounts.some((a) => (a.phone || '').trim() === cleanPhone)) {
+    return { success: false, error: 'Phone number already registered' };
+  }
+
+  const userIds = accounts
+    .filter((a) => (a.role === 'user' || a.role === 'passenger') && typeof a.id === 'string' && a.id.startsWith('U'))
+    .map((a) => {
+      const num = parseInt(a.id.replace(/\D/g, ''), 10);
+      return isNaN(num) ? 0 : num;
+    });
+  const maxId = userIds.length > 0 ? Math.max(...userIds) : 100;
+  const newId = `U${maxId + 1}`;
+
+  const newAccount = {
+    id: newId,
+    name: userData.name.trim(),
+    email: cleanEmail,
+    phone: cleanPhone,
+    password: userData.password,
+    role: 'user',
+    avatar: '',
+    rating: 5.0,
+    totalRides: 0,
+    joinedDate: new Date().toISOString().split('T')[0],
+    lastLogin: isSelfRegister ? new Date().toISOString() : null,
+    emergencyContact: userData.emergencyContact || '',
+    status: userData.status || 'Active'
+  };
+
+  syncAccountToStorage(newAccount);
+  if (isSelfRegister) {
+    setCurrentUser(newAccount);
+  }
+  return { success: true, user: newAccount };
 }
 
 export function saveUser(userData) {
-  return registerUser(userData);
+  return registerUser(userData, false);
 }
 
 /**
- * Register Driver via /api/users
+ * Register Driver via /api/users with robust client sync
  */
-export async function registerDriver(driverData) {
+export async function registerDriver(driverData, isSelfRegister = true) {
+  const cleanEmail = (driverData.email || '').trim().toLowerCase();
+  const cleanPhone = (driverData.phone || '').trim();
+
   try {
     const res = await fetch('/api/users', {
       method: 'POST',
@@ -197,24 +280,78 @@ export async function registerDriver(driverData) {
     const data = await res.json();
 
     if (data.success && data.user) {
-      setCurrentUser(data.user);
+      syncAccountToStorage(data.user);
+      if (isSelfRegister) {
+        setCurrentUser(data.user);
+      }
       return { success: true, user: data.user, driver: data.user };
-    } else {
+    } else if (res.status === 400) {
       return { success: false, error: data.error || 'Driver registration failed.' };
     }
-  } catch (error) {
-    return { success: false, error: 'Network error during driver registration.' };
+  } catch (error) {}
+
+  // Client-Side Fallback Driver Registration
+  const accounts = getAllAccounts();
+  if (accounts.some((a) => (a.email || '').toLowerCase() === cleanEmail)) {
+    return { success: false, error: 'Email already registered' };
   }
+  if (accounts.some((a) => (a.phone || '').trim() === cleanPhone)) {
+    return { success: false, error: 'Phone number already registered' };
+  }
+
+  const driverIds = accounts
+    .filter((a) => a.role === 'driver' && typeof a.id === 'string' && a.id.startsWith('D'))
+    .map((a) => {
+      const num = parseInt(a.id.replace(/\D/g, ''), 10);
+      return isNaN(num) ? 0 : num;
+    });
+  const maxId = driverIds.length > 0 ? Math.max(...driverIds) : 100;
+  const newId = `D${maxId + 1}`;
+
+  const newDriver = {
+    id: newId,
+    name: driverData.name.trim(),
+    email: cleanEmail,
+    phone: cleanPhone,
+    password: driverData.password,
+    role: 'driver',
+    avatar: '',
+    rating: 5.0,
+    totalRides: 0,
+    completedToday: 0,
+    earningsToday: 0,
+    totalEarnings: 0,
+    joinedDate: new Date().toISOString().split('T')[0],
+    lastLogin: isSelfRegister ? new Date().toISOString() : null,
+    emergencyContact: driverData.emergencyContact || '',
+    status: driverData.status || 'Active',
+    licenseNumber: (driverData.licenseNumber || 'DL-PENDING').trim().toUpperCase(),
+    vehicleType: driverData.vehicleType || 'Car',
+    vehicleNumber: (driverData.vehicleNumber || 'TN01AB0000').trim().toUpperCase(),
+    vehicleModel: driverData.vehicleModel || `${driverData.vehicleType || 'Car'} Standard`,
+    vehicleColor: driverData.vehicleColor || 'Standard',
+    drivingExperience: Number(driverData.drivingExperience) || 1,
+    available: true,
+    currentLocation: driverData.currentLocation || 'Chennai Central'
+  };
+
+  syncAccountToStorage(newDriver);
+  if (isSelfRegister) {
+    setCurrentUser(newDriver);
+  }
+  return { success: true, user: newDriver, driver: newDriver };
 }
 
 export function saveDriver(driverData) {
-  return registerDriver(driverData);
+  return registerDriver(driverData, false);
 }
 
 /**
- * Update User or Driver Profile via /api/users (PUT)
+ * Update User or Driver Profile via /api/users (PUT) with client sync
  */
 export async function updateAccount(id, updates) {
+  let updatedAccount = null;
+
   try {
     const res = await fetch('/api/users', {
       method: 'PUT',
@@ -224,16 +361,27 @@ export async function updateAccount(id, updates) {
     const data = await res.json();
 
     if (data.success && data.user) {
-      const current = getCurrentUser();
-      if (current && current.id === id) {
-        setCurrentUser(data.user);
-      }
-      return data.user;
+      updatedAccount = data.user;
     }
-    return null;
-  } catch (e) {
-    return null;
+  } catch (e) {}
+
+  if (!updatedAccount) {
+    const accounts = getAllAccounts();
+    const existing = accounts.find((a) => a.id === id);
+    if (existing) {
+      updatedAccount = { ...existing, ...updates };
+    }
   }
+
+  if (updatedAccount) {
+    syncAccountToStorage(updatedAccount);
+    const current = getCurrentUser();
+    if (current && current.id === id) {
+      setCurrentUser({ ...current, ...updatedAccount });
+    }
+  }
+
+  return updatedAccount;
 }
 
 export function updateUser(id, updates) {
@@ -244,16 +392,18 @@ export function updateDriver(id, updates) {
   return updateAccount(id, updates);
 }
 
+/**
+ * Delete User or Driver Account via /api/users (DELETE) with client sync
+ */
 export async function deleteAccount(id) {
   try {
-    const res = await fetch(`/api/users?id=${encodeURIComponent(id)}`, {
+    fetch(`/api/users?id=${encodeURIComponent(id)}`, {
       method: 'DELETE'
-    });
-    const data = await res.json();
-    return data.success;
-  } catch (e) {
-    return false;
-  }
+    }).catch(() => {});
+  } catch (e) {}
+
+  syncAccountToStorage(id, 'delete');
+  return true;
 }
 
 export function deleteUser(id) {

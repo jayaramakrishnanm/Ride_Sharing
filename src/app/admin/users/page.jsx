@@ -141,6 +141,7 @@ export default function AdminUsersPage() {
     });
 
     if (updated) {
+      setUsers((prev) => prev.map((u) => (u.id === editingUser.id ? { ...u, ...updated } : u)));
       showToast(`User ${updated.name} updated successfully.`, 'success');
       setEditingUser(null);
       loadData();
@@ -168,13 +169,16 @@ export default function AdminUsersPage() {
       role: 'user',
       emergencyContact: formEmergencyContact.trim(),
       status: formStatus
-    });
+    }, false);
 
     if (!result.success) {
       showToast(result.error, 'error');
       return;
     }
 
+    if (result.user) {
+      setUsers((prev) => [result.user, ...prev]);
+    }
     showToast(`New user ${result.user.name || result.user.id} registered successfully!`, 'success');
     setIsAddOpen(false);
     loadData();
@@ -182,12 +186,14 @@ export default function AdminUsersPage() {
 
   const handleDelete = async (id, name) => {
     if (window.confirm(`Are you sure you want to delete user ${name}?`)) {
+      setUsers((prev) => prev.filter((u) => u.id !== id));
       const ok = await deleteUser(id);
       if (ok) {
         showToast(`User ${name} deleted successfully.`, 'info');
         loadData();
       } else {
         showToast('Failed to delete user.', 'error');
+        loadData();
       }
     }
   };

@@ -18,6 +18,10 @@ function readPaymentsFromFile() {
 
 function writePaymentsToFile(payments) {
   try {
+    const dir = path.dirname(paymentsFilePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
     fs.writeFileSync(paymentsFilePath, JSON.stringify(payments, null, 2), 'utf8');
     return true;
   } catch (error) {

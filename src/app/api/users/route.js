@@ -19,11 +19,12 @@ function readUsersFromFile() {
   }
 }
 
-/**
- * Helper to write users to JSON file
- */
 function writeUsersToFile(users) {
   try {
+    const dir = path.dirname(usersFilePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
     fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2), 'utf8');
     return true;
   } catch (error) {

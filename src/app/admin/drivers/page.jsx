@@ -110,6 +110,7 @@ export default function AdminDriversPage() {
 
   const handleToggleActive = async (id, currentStatus) => {
     const nextStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+    setDrivers((prev) => prev.map((d) => (d.id === id ? { ...d, status: nextStatus } : d)));
     await updateDriver(id, { status: nextStatus });
     showToast(`Driver account marked as ${nextStatus}.`, 'info');
     loadData();
@@ -180,6 +181,7 @@ export default function AdminDriversPage() {
     });
 
     if (updated) {
+      setDrivers((prev) => prev.map((d) => (d.id === editingDriver.id ? { ...d, ...updated } : d)));
       showToast(`Driver ${updated.name} updated successfully!`, 'success');
       setEditingDriver(null);
       loadData();
@@ -214,13 +216,16 @@ export default function AdminDriversPage() {
       currentLocation: formCurrentLocation.trim() || 'Chennai Central',
       emergencyContact: formEmergencyContact.trim(),
       status: formStatus
-    });
+    }, false);
 
     if (!result.success) {
       showToast(result.error, 'error');
       return;
     }
 
+    if (result.user) {
+      setDrivers((prev) => [result.user, ...prev]);
+    }
     showToast(`New driver partner ${result.user.name || result.user.id} registered successfully!`, 'success');
     setIsAddOpen(false);
     loadData();
@@ -228,12 +233,14 @@ export default function AdminDriversPage() {
 
   const handleDelete = async (id, name) => {
     if (window.confirm(`Are you sure you want to remove driver ${name}?`)) {
+      setDrivers((prev) => prev.filter((d) => d.id !== id));
       const ok = await deleteDriver(id);
       if (ok) {
         showToast(`Driver ${name} removed successfully.`, 'info');
         loadData();
       } else {
         showToast('Failed to delete driver.', 'error');
+        loadData();
       }
     }
   };

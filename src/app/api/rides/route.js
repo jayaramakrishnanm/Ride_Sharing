@@ -18,6 +18,10 @@ function readRidesFromFile() {
 
 function writeRidesToFile(rides) {
   try {
+    const dir = path.dirname(ridesFilePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
     fs.writeFileSync(ridesFilePath, JSON.stringify(rides, null, 2), 'utf8');
     return true;
   } catch (error) {

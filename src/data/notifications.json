@@ -1,5 +1,27 @@
 [
   {
+    "id": "N122",
+    "recipientId": "U103",
+    "recipientRole": "user",
+    "title": "Ride Cancelled",
+    "message": "Your ride request R103 has been cancelled.",
+    "rideId": "R103",
+    "type": "ride_status",
+    "read": false,
+    "createdAt": "2026-08-29T06:48:11.961Z"
+  },
+  {
+    "id": "N121",
+    "recipientId": "U104",
+    "recipientRole": "user",
+    "title": "Ride Cancelled",
+    "message": "Your ride request R104 has been cancelled.",
+    "rideId": "R104",
+    "type": "ride_status",
+    "read": false,
+    "createdAt": "2026-08-29T06:48:09.546Z"
+  },
+  {
     "id": "N101",
     "recipientId": "U101",
     "recipientRole": "user",

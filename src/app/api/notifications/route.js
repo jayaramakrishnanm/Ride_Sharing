@@ -18,6 +18,10 @@ function readNotifsFromFile() {
 
 function writeNotifsToFile(notifs) {
   try {
+    const dir = path.dirname(notifsFilePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
     fs.writeFileSync(notifsFilePath, JSON.stringify(notifs, null, 2), 'utf8');
     return true;
   } catch (error) {
