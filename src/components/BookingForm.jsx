@@ -7,10 +7,16 @@ import { getDrivers } from '@/lib/storage';
 import DriverCard from './DriverCard';
 import { Car, Bike, MapPin, Calendar, Clock, Users, ArrowRight, ShieldCheck, Sparkles, AlertCircle } from 'lucide-react';
 
-export default function BookingForm({ onSubmitBooking, isSubmitting = false }) {
-  const [pickup, setPickup] = useState('Chennai Central');
-  const [drop, setDrop] = useState('T Nagar');
-  const [vehicleType, setVehicleType] = useState('Car');
+export default function BookingForm({ 
+  onSubmitBooking, 
+  isSubmitting = false,
+  initialPickup = '',
+  initialDrop = '',
+  initialVehicleType = 'Car'
+}) {
+  const [pickup, setPickup] = useState(initialPickup);
+  const [drop, setDrop] = useState(initialDrop);
+  const [vehicleType, setVehicleType] = useState(initialVehicleType);
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState(() => {
     const d = new Date();
@@ -24,11 +30,16 @@ export default function BookingForm({ onSubmitBooking, isSubmitting = false }) {
   const [nearbyDrivers, setNearbyDrivers] = useState([]);
 
   // Distance & fare estimation
-  const distanceKm = getEstimatedDistance(pickup, drop);
+  const hasRoute = Boolean(pickup && drop && pickup.trim().toLowerCase() !== drop.trim().toLowerCase());
+  const distanceKm = hasRoute ? getEstimatedDistance(pickup, drop) : 0;
   const fareDetails = calculateFare(vehicleType, distanceKm);
 
   // Update nearby driver matching whenever pickup or vehicle type changes
   useEffect(() => {
+    if (!pickup) {
+      setNearbyDrivers([]);
+      return;
+    }
     const allDrivers = getDrivers();
     const matched = getNearbyAvailableDrivers(pickup, vehicleType, allDrivers);
     setNearbyDrivers(matched.slice(0, 3));
@@ -146,9 +157,11 @@ export default function BookingForm({ onSubmitBooking, isSubmitting = false }) {
                 className="form-select"
                 value={pickup}
                 onChange={(e) => setPickup(e.target.value)}
+                required
               >
+                <option value="" disabled>Select pickup location...</option>
                 {METRO_LOCATIONS.map((loc) => (
-                  <option key={loc} value={loc}>{loc}</option>
+                  <option key={loc} value={loc} disabled={loc === drop}>{loc}</option>
                 ))}
               </select>
             </div>
@@ -159,9 +172,11 @@ export default function BookingForm({ onSubmitBooking, isSubmitting = false }) {
                 className="form-select"
                 value={drop}
                 onChange={(e) => setDrop(e.target.value)}
+                required
               >
+                <option value="" disabled>Select drop-off destination...</option>
                 {METRO_LOCATIONS.map((loc) => (
-                  <option key={loc} value={loc}>{loc}</option>
+                  <option key={loc} value={loc} disabled={loc === pickup}>{loc}</option>
                 ))}
               </select>
             </div>
@@ -257,7 +272,13 @@ export default function BookingForm({ onSubmitBooking, isSubmitting = false }) {
             className="btn btn-primary btn-lg btn-block"
             disabled={isSubmitting}
           >
-            <span>{isSubmitting ? 'Requesting Ride...' : `Confirm & Request ${vehicleType} (${formatCurrency(fareDetails.totalFare)})`}</span>
+            <span>
+              {isSubmitting
+                ? 'Requesting Ride...'
+                : hasRoute
+                  ? `Confirm & Request ${vehicleType} (${formatCurrency(fareDetails.totalFare)})`
+                  : `Select Locations to Request ${vehicleType}`}
+            </span>
             <ArrowRight size={18} />
           </button>
         </form>
@@ -277,11 +298,11 @@ export default function BookingForm({ onSubmitBooking, isSubmitting = false }) {
           <div className="fare-breakdown-list">
             <div className="fare-row">
               <span>Estimated Distance</span>
-              <strong style={{ color: 'var(--text-main)' }}>{distanceKm} km</strong>
+              <strong style={{ color: 'var(--text-main)' }}>{hasRoute ? `${distanceKm} km` : '—'}</strong>
             </div>
             <div className="fare-row">
               <span>Estimated Duration</span>
-              <strong style={{ color: 'var(--text-main)' }}>~{fareDetails.estimatedDurationMins} mins</strong>
+              <strong style={{ color: 'var(--text-main)' }}>{hasRoute ? `~${fareDetails.estimatedDurationMins} mins` : '—'}</strong>
             </div>
             <div className="fare-row">
               <span>Base Fare</span>
@@ -289,11 +310,13 @@ export default function BookingForm({ onSubmitBooking, isSubmitting = false }) {
             </div>
             <div className="fare-row">
               <span>Distance Rate (₹{fareDetails.ratePerKm}/km)</span>
-              <span>{formatCurrency(fareDetails.distanceFare)}</span>
+              <span>{hasRoute ? formatCurrency(fareDetails.distanceFare) : '₹0'}</span>
             </div>
             <div className="fare-total-row">
               <span>Total Estimated Fare</span>
-              <span className="fare-highlight-price">{formatCurrency(fareDetails.totalFare)}</span>
+              <span className="fare-highlight-price">
+                {hasRoute ? formatCurrency(fareDetails.totalFare) : formatCurrency(fareDetails.baseFare)}
+              </span>
             </div>
           </div>
 
@@ -312,7 +335,7 @@ export default function BookingForm({ onSubmitBooking, isSubmitting = false }) {
                 <span>Nearby Available Drivers</span>
               </h3>
               <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
-                Simulated Geo-matching around {pickup}
+                {pickup ? `Simulated Geo-matching around ${pickup}` : 'Select pickup location to find drivers'}
               </p>
             </div>
             <span className="badge badge-success">{nearbyDrivers.length} Online</span>
@@ -321,7 +344,7 @@ export default function BookingForm({ onSubmitBooking, isSubmitting = false }) {
           <div className="nearby-drivers-list">
             {nearbyDrivers.length === 0 ? (
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', padding: '16px' }}>
-                No active {vehicleType} drivers in range right now.
+                {pickup ? `No active ${vehicleType} drivers in range right now.` : 'Please select a pickup location to view available drivers.'}
               </p>
             ) : (
               nearbyDrivers.map((driver) => (

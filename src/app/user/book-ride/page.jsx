@@ -1,13 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import BookingForm from '@/components/BookingForm';
 import { createRide, getCurrentUser } from '@/lib/storage';
 import { useToast } from '@/components/Toast';
 
-export default function BookRidePage() {
+function BookRideContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialPickup = searchParams?.get('pickup') || '';
+  const initialDrop = searchParams?.get('drop') || '';
+  const initialVehicleType = searchParams?.get('vehicleType') || 'Car';
+
   const { showToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -43,7 +48,18 @@ export default function BookRidePage() {
       <BookingForm
         onSubmitBooking={handleBookingSubmit}
         isSubmitting={isSubmitting}
+        initialPickup={initialPickup}
+        initialDrop={initialDrop}
+        initialVehicleType={initialVehicleType}
       />
     </div>
+  );
+}
+
+export default function BookRidePage() {
+  return (
+    <Suspense fallback={<div style={{ padding: '24px', textAlign: 'center' }}>Loading booking engine...</div>}>
+      <BookRideContent />
+    </Suspense>
   );
 }

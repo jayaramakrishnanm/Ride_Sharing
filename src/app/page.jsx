@@ -23,12 +23,13 @@ import {
 } from "lucide-react";
 
 export default function LandingPage() {
-  const [pickup, setPickup] = useState("Chennai Central");
-  const [drop, setDrop] = useState("T Nagar");
+  const [pickup, setPickup] = useState("");
+  const [drop, setDrop] = useState("");
   const [vehicleType, setVehicleType] = useState("Car");
 
-  const distanceKm = getEstimatedDistance(pickup, drop);
-  const fareDetails = calculateFare(vehicleType, distanceKm);
+  const hasRoute = Boolean(pickup && drop && pickup.trim().toLowerCase() !== drop.trim().toLowerCase());
+  const distanceKm = hasRoute ? getEstimatedDistance(pickup, drop) : 0;
+  const fareDetails = hasRoute ? calculateFare(vehicleType, distanceKm) : null;
 
   return (
     <div className="app-container">
@@ -258,8 +259,9 @@ export default function LandingPage() {
                   value={pickup}
                   onChange={(e) => setPickup(e.target.value)}
                 >
+                  <option value="" disabled>Select pickup location...</option>
                   {METRO_LOCATIONS.map((loc) => (
-                    <option key={loc} value={loc}>
+                    <option key={loc} value={loc} disabled={loc === drop}>
                       {loc}
                     </option>
                   ))}
@@ -275,8 +277,9 @@ export default function LandingPage() {
                   value={drop}
                   onChange={(e) => setDrop(e.target.value)}
                 >
+                  <option value="" disabled>Select destination...</option>
                   {METRO_LOCATIONS.map((loc) => (
-                    <option key={loc} value={loc}>
+                    <option key={loc} value={loc} disabled={loc === pickup}>
                       {loc}
                     </option>
                   ))}
@@ -302,7 +305,7 @@ export default function LandingPage() {
                   }}
                 >
                   <span>Route Distance:</span>
-                  <strong>{distanceKm} km</strong>
+                  <strong>{hasRoute ? `${distanceKm} km` : "—"}</strong>
                 </div>
 
                 <div
@@ -314,7 +317,7 @@ export default function LandingPage() {
                   }}
                 >
                   <span>Estimated Time:</span>
-                  <strong>~{fareDetails.estimatedDurationMins} minutes</strong>
+                  <strong>{hasRoute && fareDetails ? `~${fareDetails.estimatedDurationMins} minutes` : "—"}</strong>
                 </div>
 
                 <div
@@ -329,17 +332,17 @@ export default function LandingPage() {
                 >
                   <span>Estimated Fare:</span>
 
-                  <span style={{ color: "var(--primary)" }}>
-                    {formatCurrency(fareDetails.totalFare)}
+                  <span style={{ color: hasRoute ? "var(--primary)" : "var(--text-muted)" }}>
+                    {hasRoute && fareDetails ? formatCurrency(fareDetails.totalFare) : "Select locations"}
                   </span>
                 </div>
               </div>
 
               <Link
-                href="/user/book-ride"
+                href={hasRoute ? `/user/book-ride?pickup=${encodeURIComponent(pickup)}&drop=${encodeURIComponent(drop)}&vehicleType=${vehicleType}` : "/user/book-ride"}
                 className="btn btn-primary btn-block"
               >
-                <span>Book This Route</span>
+                <span>{hasRoute ? "Book This Route" : "Book a Ride"}</span>
                 <ArrowRight size={16} />
               </Link>
             </div>
