@@ -34,6 +34,7 @@ export default function RideTable({
             <th>Date & Time</th>
             <th>Fare</th>
             <th>Status</th>
+            <th>Rating</th>
             <th style={{ textAlign: 'right' }}>Actions</th>
           </tr>
         </thead>
@@ -84,6 +85,18 @@ export default function RideTable({
                 <StatusBadge status={ride.status} />
               </td>
               <td>
+                {ride.rating ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--amber)', fontWeight: 800, fontSize: '0.8125rem' }}>
+                    <Star size={13} fill="var(--amber)" />
+                    <span>{ride.rating}.0</span>
+                  </div>
+                ) : ride.status === 'Completed' ? (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>Unrated</span>
+                ) : (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>-</span>
+                )}
+              </td>
+              <td>
                 <div className="action-buttons-cell">
                   {onViewDetails && (
                     <button
@@ -106,14 +119,14 @@ export default function RideTable({
                     </button>
                   )}
 
-                  {onRateDriver && ride.status === 'Completed' && !ride.rating && (
+                  {onRateDriver && ride.status === 'Completed' && (
                     <button
                       className="btn-table-action"
                       onClick={() => onRateDriver(ride)}
-                      title="Rate Driver"
+                      title={ride.rating ? 'Edit Driver Rating' : 'Rate Driver'}
                       style={{ color: 'var(--amber)' }}
                     >
-                      <Star size={14} />
+                      <Star size={14} fill={ride.rating ? 'var(--amber)' : 'none'} />
                     </button>
                   )}
 

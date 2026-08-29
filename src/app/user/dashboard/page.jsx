@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getCurrentUser, getRides, cancelRide } from '@/lib/storage';
 import { formatCurrency } from '@/lib/fareCalculator';
+import { formatLastLogin, formatJoinedDate } from '@/lib/dateUtils';
 import DashboardCard from '@/components/DashboardCard';
 import RideTable from '@/components/RideTable';
 import StatusBadge from '@/components/StatusBadge';
@@ -20,7 +21,10 @@ import {
   ArrowRight, 
   ShieldCheck, 
   MapPin, 
-  Plus 
+  Plus,
+  Calendar,
+  LogIn,
+  Star
 } from 'lucide-react';
 
 export default function UserDashboardPage() {
@@ -57,6 +61,10 @@ export default function UserDashboardPage() {
     (r) => r.status === 'Pending' || r.status === 'Accepted' || r.status === 'Driver Arriving' || r.status === 'Ride Started'
   );
 
+  const unratedCompletedRide = rides.find(
+    (r) => r.status === 'Completed' && !r.rating
+  );
+
   const completedCount = rides.filter((r) => r.status === 'Completed').length;
   const cancelledCount = rides.filter((r) => r.status === 'Cancelled').length;
 
@@ -83,6 +91,17 @@ export default function UserDashboardPage() {
           <p className="hero-desc">
             Book instant city Car and Bike rides with guaranteed transparent pricing.
           </p>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginTop: '12px', fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Calendar size={14} />
+              <span>Joined Date: <strong>{formatJoinedDate(currentUser?.joinedDate)}</strong></span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <LogIn size={14} />
+              <span>Last Login: <strong>{formatLastLogin(currentUser?.lastLogin)}</strong></span>
+            </div>
+          </div>
         </div>
 
         <Link href="/user/book-ride" className="btn btn-secondary btn-lg" style={{ backgroundColor: '#ffffff', color: 'var(--primary-text)', fontWeight: 800 }}>
@@ -90,6 +109,45 @@ export default function UserDashboardPage() {
           <span>Book a New Ride</span>
         </Link>
       </div>
+
+      {/* Unrated Trip Reminder Prompt */}
+      {unratedCompletedRide && (
+        <div className="card" style={{ 
+          backgroundColor: '#fffbeb', 
+          border: '1.5px solid #fde68a', 
+          marginBottom: '24px', 
+          padding: '16px 20px',
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between', 
+          flexWrap: 'wrap', 
+          gap: '14px',
+          borderRadius: '16px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--amber-light)', color: 'var(--amber)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Star size={22} fill="var(--amber)" />
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, color: 'var(--amber-text)', fontSize: '0.9375rem' }}>
+                Rate your completed trip with {unratedCompletedRide.driverName || 'your driver'}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                Ride #{unratedCompletedRide.id} • {unratedCompletedRide.pickup} ➔ {unratedCompletedRide.drop} • {formatCurrency(unratedCompletedRide.fare)}
+              </div>
+            </div>
+          </div>
+
+          <button 
+            className="btn btn-primary btn-sm" 
+            onClick={() => setSelectedRatingRide(unratedCompletedRide)}
+            style={{ backgroundColor: 'var(--amber)', color: '#ffffff' }}
+          >
+            <Star size={14} fill="#ffffff" />
+            <span>Rate Driver</span>
+          </button>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="stats-grid">
@@ -184,7 +242,7 @@ export default function UserDashboardPage() {
           <div>
             <h2 className="section-title">Recent Ride History</h2>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Your latest bookings, completed trips, and invoices
+              Your latest bookings, completed trips, ratings, and invoices
             </p>
           </div>
 

@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { getCurrentUser, updateUser } from '@/lib/storage';
+import { formatLastLogin, formatJoinedDate } from '@/lib/dateUtils';
 import { useToast } from '@/components/Toast';
-import { User, Phone, Mail, ShieldAlert, Star, CheckCircle2, Save } from 'lucide-react';
+import { User, Phone, Mail, ShieldAlert, Star, CheckCircle2, Save, Calendar, LogIn } from 'lucide-react';
 
 export default function UserProfilePage() {
   const { showToast } = useToast();
@@ -20,10 +21,11 @@ export default function UserProfilePage() {
       setCurrentUserState(user);
       setName(user.name || '');
       setPhone(user.phone || '');
+      setEmergencyContact(user.emergencyContact || '');
     }
   }, []);
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     if (!currentUser) return;
 
@@ -32,16 +34,19 @@ export default function UserProfilePage() {
       return;
     }
 
-    const updated = updateUser(currentUser.id, {
+    const updated = await updateUser(currentUser.id, {
       name: name.trim(),
-      phone: phone.trim()
+      phone: phone.trim(),
+      emergencyContact: emergencyContact.trim()
     });
 
     if (updated) {
       setCurrentUserState(updated);
-      showToast('Profile updated successfully!', 'success');
+      showToast('Profile updated and saved to users.json successfully!', 'success');
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
+    } else {
+      showToast('Failed to update profile.', 'error');
     }
   };
 
@@ -64,7 +69,17 @@ export default function UserProfilePage() {
               <h2 style={{ fontSize: '1.25rem', fontWeight: 900 }}>{currentUser.name}</h2>
               <span className="badge badge-success">Verified Passenger</span>
             </div>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Account ID: <strong style={{ fontFamily: 'monospace' }}>{currentUser.id}</strong> • Member since {currentUser.joinedDate || '2025'}</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+              <span>Account ID: <strong style={{ fontFamily: 'monospace' }}>{currentUser.id}</strong></span>
+              <span>•</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Calendar size={12} /> Joined Date: <strong>{formatJoinedDate(currentUser.joinedDate)}</strong>
+              </span>
+              <span>•</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <LogIn size={12} /> Last Login: <strong>{formatLastLogin(currentUser.lastLogin)}</strong>
+              </span>
+            </div>
           </div>
         </div>
 

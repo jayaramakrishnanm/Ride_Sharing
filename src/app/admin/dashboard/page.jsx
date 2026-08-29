@@ -23,8 +23,7 @@ import {
   CheckCircle2, 
   XCircle, 
   RotateCcw, 
-  ArrowRight, 
-  Sparkles 
+  ArrowRight 
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
@@ -34,9 +33,21 @@ export default function AdminDashboardPage() {
   const [rides, setRides] = useState([]);
   const [payments, setPayments] = useState([]);
 
-  const loadData = () => {
-    setUsers(getUsers().filter((u) => u.role !== 'admin'));
-    setDrivers(getDrivers());
+  const loadData = async () => {
+    try {
+      const res = await fetch('/api/users');
+      const data = await res.json();
+      if (data.success && data.users) {
+        setUsers(data.users.filter((u) => u.role === 'user' || u.role === 'passenger'));
+        setDrivers(data.users.filter((u) => u.role === 'driver'));
+      } else {
+        setUsers(getUsers());
+        setDrivers(getDrivers());
+      }
+    } catch (e) {
+      setUsers(getUsers());
+      setDrivers(getDrivers());
+    }
     setRides(getRides());
     setPayments(getPayments());
   };
@@ -69,7 +80,7 @@ export default function AdminDashboardPage() {
   const bikeDriversCount = drivers.filter((d) => d.vehicleType === 'Bike').length;
 
   const handleResetDatabase = () => {
-    if (window.confirm('Reset all localStorage data back to fresh MCA demo seed state?')) {
+    if (window.confirm('Reset all demo data back to default state?')) {
       initializeStorage(true);
       showToast('Database reset to initial demo state successfully!', 'success');
       loadData();
@@ -87,7 +98,7 @@ export default function AdminDashboardPage() {
           </div>
           <h1 className="hero-title">Platform Master Overview</h1>
           <p className="hero-desc">
-            Monitor real-time dispatch, fleet availability, user accounts, and financial volume.
+            Monitor real-time dispatch, fleet availability, user accounts from users.json, and financial volume.
           </p>
         </div>
 
@@ -97,7 +108,7 @@ export default function AdminDashboardPage() {
           style={{ backgroundColor: '#ffffff', color: 'var(--purple-text)', fontWeight: 800 }}
         >
           <RotateCcw size={16} />
-          <span>Reset Demo DB</span>
+          <span>Reset Demo Data</span>
         </button>
       </div>
 
@@ -106,14 +117,14 @@ export default function AdminDashboardPage() {
         <DashboardCard
           title="Total Users"
           value={users.length}
-          subtitle="Registered accounts"
+          subtitle="From users.json (U###)"
           icon={Users}
           color="purple"
         />
         <DashboardCard
           title="Total Drivers"
           value={drivers.length}
-          subtitle={`${drivers.filter((d) => d.available).length} Online now`}
+          subtitle={`${drivers.filter((d) => d.available).length} Online (D###)`}
           icon={ShieldCheck}
           color="sky"
         />

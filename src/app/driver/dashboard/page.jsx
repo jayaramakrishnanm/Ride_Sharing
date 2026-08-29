@@ -11,6 +11,7 @@ import {
   updateDriver 
 } from '@/lib/storage';
 import { formatCurrency } from '@/lib/fareCalculator';
+import { formatLastLogin, formatJoinedDate } from '@/lib/dateUtils';
 import DashboardCard from '@/components/DashboardCard';
 import StatusBadge from '@/components/StatusBadge';
 import RideTable from '@/components/RideTable';
@@ -27,7 +28,9 @@ import {
   ArrowRight, 
   MapPin, 
   Clock, 
-  Check 
+  Check,
+  Calendar,
+  LogIn 
 } from 'lucide-react';
 
 export default function DriverDashboardPage() {
@@ -105,7 +108,7 @@ export default function DriverDashboardPage() {
         <div>
           <div className="hero-tag">
             {driver?.vehicleType === 'Car' ? <Car size={14} /> : <Bike size={14} />}
-            <span>Driver Partner Console</span>
+            <span>Driver Partner Console ({driver?.id})</span>
           </div>
           <h1 className="hero-title">
             Hello, {driver?.name || 'Partner'}!
@@ -113,6 +116,17 @@ export default function DriverDashboardPage() {
           <p className="hero-desc">
             {driver?.vehicleType} • {driver?.vehicleModel} (<strong style={{ fontFamily: 'monospace' }}>{driver?.vehicleNumber}</strong>) • Rating {driver?.rating || 4.9} ★
           </p>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginTop: '12px', fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Calendar size={14} />
+              <span>Joined Date: <strong>{formatJoinedDate(driver?.joinedDate)}</strong></span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <LogIn size={14} />
+              <span>Last Login: <strong>{formatLastLogin(driver?.lastLogin)}</strong></span>
+            </div>
+          </div>
         </div>
 
         {/* Online / Offline Toggle Button */}

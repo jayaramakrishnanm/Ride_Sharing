@@ -1,65 +1,69 @@
 // =========================================================
-// LocalStorage & SessionStorage Engine (JavaScript ES6)
+// Data Storage & Business Logic Engine (JavaScript ES6)
+// Single Source of Truth: src/data/ (users.json, rides.json, payments.json, notifications.json)
+// Client Session: localStorage ('currentUser')
 // =========================================================
 
-import seedUsers from '../data/users.json';
-import seedDrivers from '../data/drivers.json';
+import seedUsersAndDrivers from '../data/users.json';
 import seedRides from '../data/rides.json';
 import seedPayments from '../data/payments.json';
 import seedNotifications from '../data/notifications.json';
 
-const STORAGE_KEYS = {
-  USERS: 'rss_users',
-  DRIVERS: 'rss_drivers',
-  RIDES: 'rss_rides',
-  PAYMENTS: 'rss_payments',
-  NOTIFICATIONS: 'rss_notifications',
-  CURRENT_USER: 'rss_currentUser',
-  INITIALIZED: 'rss_initialized_v2'
-};
+import {
+  STORAGE_KEYS,
+  getStorageData,
+  setStorageData,
+  removeStorageData
+} from './localStorage';
 
-// Dispatch local event for reactive updates across components and tabs
-function notifyChange(key, data) {
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('rss_storage_update', { detail: { key, data } }));
-  }
-}
+export { STORAGE_KEYS, getStorageData, setStorageData, removeStorageData };
 
 /**
- * Initialize LocalStorage with seed JSON data if empty or forced reset
+ * Initialize storage with default rides/payments/notifications if empty.
+ * NOTE: currentUser is initially null so new website visits start without any logged in user.
  */
 export function initializeStorage(forceReset = false) {
   if (typeof window === 'undefined') return;
 
-  const isInitialized = localStorage.getItem(STORAGE_KEYS.INITIALIZED);
+  const isInitialized = localStorage.getItem('rss_initialized_single_db_v7');
 
   if (!isInitialized || forceReset) {
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(seedUsers));
-    localStorage.setItem(STORAGE_KEYS.DRIVERS, JSON.stringify(seedDrivers));
-    localStorage.setItem(STORAGE_KEYS.RIDES, JSON.stringify(seedRides));
-    localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(seedPayments));
-    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(seedNotifications));
-    localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
-
-    if (!sessionStorage.getItem(STORAGE_KEYS.CURRENT_USER) || forceReset) {
-      sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(seedUsers[0]));
+    // Rides
+    const existingRides = getStorageData(STORAGE_KEYS.RIDES, null);
+    if (!existingRides || forceReset) {
+      setStorageData(STORAGE_KEYS.RIDES, seedRides);
+      setStorageData(STORAGE_KEYS.BOOKINGS, seedRides);
     }
 
-    notifyChange('all');
+    // Payments
+    const existingPayments = getStorageData(STORAGE_KEYS.PAYMENTS, null);
+    if (!existingPayments || forceReset) {
+      setStorageData(STORAGE_KEYS.PAYMENTS, seedPayments);
+    }
+
+    // Notifications
+    const existingNotifs = getStorageData(STORAGE_KEYS.NOTIFICATIONS, null);
+    if (!existingNotifs || forceReset) {
+      setStorageData(STORAGE_KEYS.NOTIFICATIONS, seedNotifications);
+    }
+
+    // Always start logged out on reset
+    if (forceReset) {
+      setCurrentUser(null);
+    }
+
+    localStorage.setItem('rss_initialized_single_db_v7', 'true');
   }
 }
 
 // ----------------------------------------------------
-// AUTH & SESSION MANAGEMENT (SessionStorage)
+// AUTH & SESSION MANAGEMENT (currentUser in LocalStorage)
 // ----------------------------------------------------
 
 export function getCurrentUser() {
   if (typeof window === 'undefined') return null;
-  initializeStorage();
-  
-  const userJson = sessionStorage.getItem(STORAGE_KEYS.CURRENT_USER) || localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+  const userJson = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
   if (!userJson) return null;
-  
   try {
     return JSON.parse(userJson);
   } catch (e) {
@@ -70,218 +74,212 @@ export function getCurrentUser() {
 export function setCurrentUser(user) {
   if (typeof window === 'undefined') return;
   if (!user) {
-    sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    window.dispatchEvent(new CustomEvent('rss_storage_update', { detail: { key: STORAGE_KEYS.CURRENT_USER, data: null } }));
   } else {
-    sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+    window.dispatchEvent(new CustomEvent('rss_storage_update', { detail: { key: STORAGE_KEYS.CURRENT_USER, data: user } }));
   }
-  notifyChange(STORAGE_KEYS.CURRENT_USER, user);
 }
 
 export function logout() {
   setCurrentUser(null);
 }
 
-export function authenticate(email, password, role) {
-  initializeStorage();
-  const cleanEmail = (email || '').trim().toLowerCase();
+// ----------------------------------------------------
+// ACCOUNTS (USERS, DRIVERS, ADMINS) - SINGLE SOURCE OF TRUTH
+// ----------------------------------------------------
 
-  if (role === 'driver') {
-    const drivers = getDrivers();
-    const driver = drivers.find((d) => d.email.toLowerCase() === cleanEmail);
-    if (!driver) return { success: false, error: 'Driver account not found with this email.' };
-    if (password && driver.password && driver.password !== password) {
-      return { success: false, error: 'Incorrect password.' };
-    }
-    if (driver.status === 'Inactive') {
-      return { success: false, error: 'Your driver account has been deactivated by the administrator.' };
-    }
-    setCurrentUser(driver);
-    return { success: true, user: driver };
-  } else {
-    const users = getUsers();
-    const user = users.find((u) => u.email.toLowerCase() === cleanEmail);
-    if (!user) return { success: false, error: 'Account not found with this email.' };
-    if (password && user.password && user.password !== password) {
-      return { success: false, error: 'Incorrect password.' };
-    }
-    if (role && user.role !== role && !(role === 'user' && user.role === 'admin')) {
-      return { success: false, error: `Account exists but role is ${user.role}. Please select the matching tab.` };
-    }
-    setCurrentUser(user);
-    return { success: true, user };
-  }
+export function getAllAccounts() {
+  return seedUsersAndDrivers;
 }
 
-// ----------------------------------------------------
-// USERS CRUD
-// ----------------------------------------------------
-
 export function getUsers() {
-  if (typeof window === 'undefined') return seedUsers;
-  initializeStorage();
-  try {
-    const data = localStorage.getItem(STORAGE_KEYS.USERS);
-    return data ? JSON.parse(data) : seedUsers;
-  } catch (e) {
-    return seedUsers;
-  }
+  return getAllAccounts().filter((a) => a.role === 'user' || a.role === 'passenger');
 }
 
 export function getUserById(id) {
-  return getUsers().find((u) => u.id === id);
+  return getAllAccounts().find((u) => u.id === id);
 }
-
-export function saveUser(user) {
-  const users = getUsers();
-  const newId = user.id || `U${100 + users.length + 1}`;
-  const newUser = {
-    ...user,
-    id: newId,
-    role: user.role || 'user',
-    status: user.status || 'Active',
-    rating: user.rating || 5.0,
-    totalRides: user.totalRides || 0,
-    joinedDate: user.joinedDate || new Date().toISOString().split('T')[0]
-  };
-
-  const index = users.findIndex((u) => u.id === newUser.id);
-  if (index >= 0) {
-    users[index] = newUser;
-  } else {
-    users.push(newUser);
-  }
-
-  localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-  notifyChange(STORAGE_KEYS.USERS, users);
-  return newUser;
-}
-
-export function updateUser(id, updates) {
-  const users = getUsers();
-  const index = users.findIndex((u) => u.id === id);
-  if (index === -1) return null;
-
-  users[index] = { ...users[index], ...updates };
-  localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-
-  const currentUser = getCurrentUser();
-  if (currentUser && currentUser.id === id) {
-    setCurrentUser(users[index]);
-  }
-
-  notifyChange(STORAGE_KEYS.USERS, users);
-  return users[index];
-}
-
-export function deleteUser(id) {
-  let users = getUsers();
-  const initialLength = users.length;
-  users = users.filter((u) => u.id !== id);
-  if (users.length === initialLength) return false;
-
-  localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-  notifyChange(STORAGE_KEYS.USERS, users);
-  return true;
-}
-
-// ----------------------------------------------------
-// DRIVERS CRUD
-// ----------------------------------------------------
 
 export function getDrivers() {
-  if (typeof window === 'undefined') return seedDrivers;
-  initializeStorage();
-  try {
-    const data = localStorage.getItem(STORAGE_KEYS.DRIVERS);
-    return data ? JSON.parse(data) : seedDrivers;
-  } catch (e) {
-    return seedDrivers;
-  }
+  return getAllAccounts().filter((a) => a.role === 'driver');
 }
 
 export function getDriverById(id) {
-  return getDrivers().find((d) => d.id === id);
+  return getAllAccounts().find((d) => d.id === id);
 }
 
-export function saveDriver(driver) {
-  const drivers = getDrivers();
-  const newId = driver.id || `D${100 + drivers.length + 1}`;
-  const newDriver = {
-    ...driver,
-    id: newId,
-    role: 'driver',
-    available: driver.available !== undefined ? driver.available : true,
-    rating: driver.rating || 5.0,
-    totalRides: driver.totalRides || 0,
-    completedToday: driver.completedToday || 0,
-    earningsToday: driver.earningsToday || 0,
-    totalEarnings: driver.totalEarnings || 0,
-    status: driver.status || 'Active',
-    joinedDate: driver.joinedDate || new Date().toISOString().split('T')[0]
-  };
+export function getAdmins() {
+  return getAllAccounts().filter((a) => a.role === 'admin');
+}
 
-  const index = drivers.findIndex((d) => d.id === newDriver.id);
-  if (index >= 0) {
-    drivers[index] = newDriver;
-  } else {
-    drivers.push(newDriver);
+/**
+ * Client-Side / API Authenticate
+ */
+export async function authenticate(identifier, password, role) {
+  const cleanId = (identifier || '').trim().toLowerCase();
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: cleanId, password, role })
+    });
+    const data = await res.json();
+
+    if (data.success && data.user) {
+      setCurrentUser(data.user);
+      return { success: true, user: data.user };
+    } else {
+      return { success: false, error: data.error || 'Authentication failed.' };
+    }
+  } catch (err) {
+    const accounts = getAllAccounts();
+    const account = accounts.find(
+      (a) =>
+        (a.email || '').toLowerCase() === cleanId ||
+        (a.phone && a.phone.trim() === identifier.trim())
+    );
+
+    if (!account) {
+      return { success: false, error: 'Account not found with this email or phone.' };
+    }
+    if (account.password && account.password !== password) {
+      return { success: false, error: 'Incorrect password. Please try again.' };
+    }
+    if (account.role === 'driver' && account.status === 'Inactive') {
+      return { success: false, error: 'Your driver account has been deactivated by the administrator.' };
+    }
+
+    setCurrentUser(account);
+    return { success: true, user: account };
   }
+}
 
-  localStorage.setItem(STORAGE_KEYS.DRIVERS, JSON.stringify(drivers));
-  notifyChange(STORAGE_KEYS.DRIVERS, drivers);
-  return newDriver;
+/**
+ * Register User via /api/users
+ */
+export async function registerUser(userData) {
+  try {
+    const res = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...userData, role: 'user' })
+    });
+    const data = await res.json();
+
+    if (data.success && data.user) {
+      setCurrentUser(data.user);
+      return { success: true, user: data.user };
+    } else {
+      return { success: false, error: data.error || 'Registration failed.' };
+    }
+  } catch (error) {
+    return { success: false, error: 'Network error during registration.' };
+  }
+}
+
+export function saveUser(userData) {
+  return registerUser(userData);
+}
+
+/**
+ * Register Driver via /api/users
+ */
+export async function registerDriver(driverData) {
+  try {
+    const res = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...driverData, role: 'driver' })
+    });
+    const data = await res.json();
+
+    if (data.success && data.user) {
+      setCurrentUser(data.user);
+      return { success: true, user: data.user, driver: data.user };
+    } else {
+      return { success: false, error: data.error || 'Driver registration failed.' };
+    }
+  } catch (error) {
+    return { success: false, error: 'Network error during driver registration.' };
+  }
+}
+
+export function saveDriver(driverData) {
+  return registerDriver(driverData);
+}
+
+/**
+ * Update User or Driver Profile via /api/users (PUT)
+ */
+export async function updateAccount(id, updates) {
+  try {
+    const res = await fetch('/api/users', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...updates })
+    });
+    const data = await res.json();
+
+    if (data.success && data.user) {
+      const current = getCurrentUser();
+      if (current && current.id === id) {
+        setCurrentUser(data.user);
+      }
+      return data.user;
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
+export function updateUser(id, updates) {
+  return updateAccount(id, updates);
 }
 
 export function updateDriver(id, updates) {
-  const drivers = getDrivers();
-  const index = drivers.findIndex((d) => d.id === id);
-  if (index === -1) return null;
+  return updateAccount(id, updates);
+}
 
-  drivers[index] = { ...drivers[index], ...updates };
-  localStorage.setItem(STORAGE_KEYS.DRIVERS, JSON.stringify(drivers));
-
-  const currentUser = getCurrentUser();
-  if (currentUser && currentUser.id === id) {
-    setCurrentUser(drivers[index]);
+export async function deleteAccount(id) {
+  try {
+    const res = await fetch(`/api/users?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+    return data.success;
+  } catch (e) {
+    return false;
   }
+}
 
-  notifyChange(STORAGE_KEYS.DRIVERS, drivers);
-  return drivers[index];
+export function deleteUser(id) {
+  return deleteAccount(id);
+}
+
+export function deleteDriver(id) {
+  return deleteAccount(id);
 }
 
 export function toggleDriverAvailability(id) {
   const driver = getDriverById(id);
   if (!driver) return false;
-  const updated = updateDriver(id, { available: !driver.available });
-  return !!updated?.available;
-}
-
-export function deleteDriver(id) {
-  let drivers = getDrivers();
-  const initialLength = drivers.length;
-  drivers = drivers.filter((d) => d.id !== id);
-  if (drivers.length === initialLength) return false;
-
-  localStorage.setItem(STORAGE_KEYS.DRIVERS, JSON.stringify(drivers));
-  notifyChange(STORAGE_KEYS.DRIVERS, drivers);
-  return true;
+  const newStatus = !driver.available;
+  updateDriver(id, { available: newStatus });
+  return newStatus;
 }
 
 // ----------------------------------------------------
-// RIDES CRUD & STATUS LIFECYCLE
+// RIDES & BOOKINGS CRUD (Persisted to src/data/rides.json)
 // ----------------------------------------------------
 
 export function getRides() {
   if (typeof window === 'undefined') return seedRides;
   initializeStorage();
-  try {
-    const data = localStorage.getItem(STORAGE_KEYS.RIDES);
-    return data ? JSON.parse(data) : seedRides;
-  } catch (e) {
-    return seedRides;
-  }
+  return getStorageData(STORAGE_KEYS.RIDES, seedRides);
 }
 
 export function getRideById(id) {
@@ -290,18 +288,29 @@ export function getRideById(id) {
 
 export function createRide(rideData) {
   const rides = getRides();
-  const idNum = Math.floor(100 + Math.random() * 900);
+  const count = 100 + rides.length + 1;
+  const newId = `R${count}`;
   const now = new Date().toISOString();
 
   const newRide = {
     ...rideData,
-    id: `R${idNum}`,
+    id: newId,
     createdAt: now,
     updatedAt: now
   };
 
   rides.unshift(newRide);
-  localStorage.setItem(STORAGE_KEYS.RIDES, JSON.stringify(rides));
+  setStorageData(STORAGE_KEYS.RIDES, rides);
+  setStorageData(STORAGE_KEYS.BOOKINGS, rides);
+
+  // Asynchronously persist to src/data/rides.json
+  if (typeof window !== 'undefined') {
+    fetch('/api/rides', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newRide)
+    }).catch((e) => console.warn('Could not sync ride to JSON file:', e));
+  }
 
   // Notify online drivers
   const matchingDrivers = getDrivers().filter(
@@ -318,7 +327,6 @@ export function createRide(rideData) {
     });
   });
 
-  notifyChange(STORAGE_KEYS.RIDES, rides);
   return newRide;
 }
 
@@ -331,11 +339,10 @@ export function acceptRide(rideId, driverId) {
   }
 
   const ride = rides[index];
-  // Strict Concurrency Check: Only Pending rides can be accepted
   if (ride.status !== 'Pending') {
-    return { 
-      success: false, 
-      error: `This ride has already been ${ride.status.toLowerCase()} by another driver.` 
+    return {
+      success: false,
+      error: `This ride has already been ${ride.status.toLowerCase()} by another driver.`
     };
   }
 
@@ -356,9 +363,18 @@ export function acceptRide(rideId, driverId) {
   };
 
   rides[index] = updatedRide;
-  localStorage.setItem(STORAGE_KEYS.RIDES, JSON.stringify(rides));
+  setStorageData(STORAGE_KEYS.RIDES, rides);
+  setStorageData(STORAGE_KEYS.BOOKINGS, rides);
 
-  // Notify passenger
+  // Sync to src/data/rides.json
+  if (typeof window !== 'undefined') {
+    fetch('/api/rides', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedRide)
+    }).catch((e) => console.warn('Could not sync accept ride to JSON:', e));
+  }
+
   createNotification({
     recipientId: ride.userId,
     recipientRole: 'user',
@@ -368,7 +384,6 @@ export function acceptRide(rideId, driverId) {
     type: 'ride_status'
   });
 
-  notifyChange(STORAGE_KEYS.RIDES, rides);
   return { success: true, ride: updatedRide };
 }
 
@@ -404,7 +419,17 @@ export function updateRideStatus(rideId, status) {
   }
 
   rides[index] = updatedRide;
-  localStorage.setItem(STORAGE_KEYS.RIDES, JSON.stringify(rides));
+  setStorageData(STORAGE_KEYS.RIDES, rides);
+  setStorageData(STORAGE_KEYS.BOOKINGS, rides);
+
+  // Persist to src/data/rides.json
+  if (typeof window !== 'undefined') {
+    fetch('/api/rides', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedRide)
+    }).catch((e) => console.warn('Could not sync ride status to JSON:', e));
+  }
 
   let userMsg = '';
   let title = '';
@@ -416,7 +441,7 @@ export function updateRideStatus(rideId, status) {
     userMsg = `Your ride to ${prev.drop} has started. OTP verified. Have a safe trip!`;
   } else if (status === 'Completed') {
     title = 'Ride Completed';
-    userMsg = `You have arrived at ${prev.drop}. Total Fare: ₹${prev.fare}. Thank you for riding with us!`;
+    userMsg = `You have arrived at ${prev.drop}. Total Fare: ₹${prev.fare}. Thank you for riding with us! Please rate your driver.`;
   } else if (status === 'Cancelled') {
     title = 'Ride Cancelled';
     userMsg = `Your ride request ${prev.id} has been cancelled.`;
@@ -433,7 +458,6 @@ export function updateRideStatus(rideId, status) {
     });
   }
 
-  notifyChange(STORAGE_KEYS.RIDES, rides);
   return updatedRide;
 }
 
@@ -458,45 +482,63 @@ export function cancelRide(rideId, cancelledByRole) {
   return true;
 }
 
+/**
+ * Rate a completed ride and update driver's lifetime rating
+ */
 export function rateRide(rideId, rating, feedback) {
   const rides = getRides();
   const index = rides.findIndex((r) => r.id === rideId);
   if (index === -1) return false;
 
-  rides[index].rating = rating;
-  rides[index].feedback = feedback;
+  const numRating = Number(rating) || 5;
+  rides[index].rating = numRating;
+  rides[index].feedback = feedback || 'Great ride!';
   rides[index].updatedAt = new Date().toISOString();
 
-  localStorage.setItem(STORAGE_KEYS.RIDES, JSON.stringify(rides));
+  setStorageData(STORAGE_KEYS.RIDES, rides);
+  setStorageData(STORAGE_KEYS.BOOKINGS, rides);
 
+  // Persist to src/data/rides.json
+  if (typeof window !== 'undefined') {
+    fetch('/api/rides', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rides[index])
+    }).catch((e) => console.warn('Could not sync rating to JSON:', e));
+  }
+
+  // Update driver's overall rating
   if (rides[index].driverId) {
+    const driverId = rides[index].driverId;
+    const allDriverRides = rides.filter((r) => r.driverId === driverId && r.rating);
+    const avgRating = allDriverRides.length > 0
+      ? Number((allDriverRides.reduce((sum, r) => sum + Number(r.rating), 0) / allDriverRides.length).toFixed(1))
+      : numRating;
+
+    updateDriver(driverId, { rating: avgRating });
+
     createNotification({
-      recipientId: rides[index].driverId,
+      recipientId: driverId,
       recipientRole: 'driver',
-      title: `${rating}-Star Rating Received`,
-      message: `${rides[index].userName} rated you ${rating} stars: "${feedback || 'No comments'}"`,
+      title: `${numRating}-Star Rating Received!`,
+      message: `${rides[index].userName} rated you ${numRating} stars: "${feedback || 'No comments'}"`,
       rideId: rides[index].id,
       type: 'rating'
     });
   }
 
-  notifyChange(STORAGE_KEYS.RIDES, rides);
+  window.dispatchEvent(new CustomEvent('rss_storage_update', { detail: { key: STORAGE_KEYS.RIDES, data: rides } }));
   return true;
 }
 
 // ----------------------------------------------------
-// PAYMENTS CRUD
+// PAYMENTS CRUD (Persisted to src/data/payments.json)
 // ----------------------------------------------------
 
 export function getPayments() {
   if (typeof window === 'undefined') return seedPayments;
   initializeStorage();
-  try {
-    const data = localStorage.getItem(STORAGE_KEYS.PAYMENTS);
-    return data ? JSON.parse(data) : seedPayments;
-  } catch (e) {
-    return seedPayments;
-  }
+  return getStorageData(STORAGE_KEYS.PAYMENTS, seedPayments);
 }
 
 export function processPaymentSimulation(rideId, method) {
@@ -521,7 +563,16 @@ export function processPaymentSimulation(rideId, method) {
   };
 
   payments.unshift(payment);
-  localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(payments));
+  setStorageData(STORAGE_KEYS.PAYMENTS, payments);
+
+  // Persist to src/data/payments.json
+  if (typeof window !== 'undefined') {
+    fetch('/api/payments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payment)
+    }).catch((e) => console.warn('Could not sync payment to JSON:', e));
+  }
 
   if (ride) {
     const rides = getRides();
@@ -529,7 +580,16 @@ export function processPaymentSimulation(rideId, method) {
     if (rIndex !== -1) {
       rides[rIndex].paymentStatus = 'Paid';
       rides[rIndex].paymentMethod = method;
-      localStorage.setItem(STORAGE_KEYS.RIDES, JSON.stringify(rides));
+      setStorageData(STORAGE_KEYS.RIDES, rides);
+      setStorageData(STORAGE_KEYS.BOOKINGS, rides);
+
+      if (typeof window !== 'undefined') {
+        fetch('/api/rides', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(rides[rIndex])
+        }).catch((e) => console.warn('Could not sync paymentStatus to JSON:', e));
+      }
     }
 
     createNotification({
@@ -542,28 +602,21 @@ export function processPaymentSimulation(rideId, method) {
     });
   }
 
-  notifyChange(STORAGE_KEYS.PAYMENTS, payments);
-  notifyChange(STORAGE_KEYS.RIDES);
   return { success: true, payment };
 }
 
 // ----------------------------------------------------
-// NOTIFICATIONS CRUD
+// NOTIFICATIONS CRUD (Persisted to src/data/notifications.json)
 // ----------------------------------------------------
 
 export function getNotifications(recipientId) {
   if (typeof window === 'undefined') return seedNotifications;
   initializeStorage();
-  try {
-    const data = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
-    const notifications = data ? JSON.parse(data) : seedNotifications;
-    if (recipientId) {
-      return notifications.filter((n) => n.recipientId === recipientId || n.recipientId === 'ALL');
-    }
-    return notifications;
-  } catch (e) {
-    return seedNotifications;
+  const notifications = getStorageData(STORAGE_KEYS.NOTIFICATIONS, seedNotifications);
+  if (recipientId) {
+    return notifications.filter((n) => n.recipientId === recipientId || n.recipientId === 'ALL');
   }
+  return notifications;
 }
 
 export function createNotification(notif) {
@@ -578,8 +631,17 @@ export function createNotification(notif) {
   };
 
   notifications.unshift(newNotif);
-  localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
-  notifyChange(STORAGE_KEYS.NOTIFICATIONS, notifications);
+  setStorageData(STORAGE_KEYS.NOTIFICATIONS, notifications);
+
+  // Persist to src/data/notifications.json
+  if (typeof window !== 'undefined') {
+    fetch('/api/notifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newNotif)
+    }).catch((e) => console.warn('Could not sync notif to JSON:', e));
+  }
+
   return newNotif;
 }
 
@@ -588,8 +650,15 @@ export function markNotificationAsRead(id) {
   const target = notifications.find((n) => n.id === id);
   if (target) {
     target.read = true;
-    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
-    notifyChange(STORAGE_KEYS.NOTIFICATIONS, notifications);
+    setStorageData(STORAGE_KEYS.NOTIFICATIONS, notifications);
+
+    if (typeof window !== 'undefined') {
+      fetch('/api/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      }).catch((e) => console.warn('Could not sync markRead to JSON:', e));
+    }
   }
 }
 
@@ -600,13 +669,19 @@ export function markAllNotificationsAsRead(recipientId) {
       n.read = true;
     }
   });
-  localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
-  notifyChange(STORAGE_KEYS.NOTIFICATIONS, notifications);
+  setStorageData(STORAGE_KEYS.NOTIFICATIONS, notifications);
+
+  if (typeof window !== 'undefined') {
+    fetch('/api/notifications', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipientId, markAll: true })
+    }).catch((e) => console.warn('Could not sync markAll to JSON:', e));
+  }
 }
 
 export function deleteNotification(id) {
   let notifications = getNotifications();
   notifications = notifications.filter((n) => n.id !== id);
-  localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
-  notifyChange(STORAGE_KEYS.NOTIFICATIONS, notifications);
+  setStorageData(STORAGE_KEYS.NOTIFICATIONS, notifications);
 }

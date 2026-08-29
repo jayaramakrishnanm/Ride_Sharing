@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { authenticate, setCurrentUser, getUsers, getDrivers } from '@/lib/storage';
+import { authenticate } from '@/lib/storage';
 import { useToast } from '@/components/Toast';
 import { 
   User, 
@@ -24,27 +24,19 @@ export default function LoginPage() {
   const { showToast } = useToast();
 
   const [role, setRole] = useState('user');
-  const [email, setEmail] = useState('ravi@gmail.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRoleChange = (newRole) => {
     setRole(newRole);
     setErrorMessage('');
-    if (newRole === 'user') {
-      setEmail('ravi@gmail.com');
-      setPassword('password123');
-    } else if (newRole === 'driver') {
-      setEmail('arun@gmail.com');
-      setPassword('password123');
-    } else if (newRole === 'admin') {
-      setEmail('admin@rideshare.com');
-      setPassword('adminpassword');
-    }
+    setEmail('');
+    setPassword('');
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMessage('');
 
@@ -59,52 +51,77 @@ export default function LoginPage() {
 
     setIsLoading(true);
 
-    setTimeout(() => {
-      const result = authenticate(email, password, role);
+    try {
+      const result = await authenticate(email, password, role);
 
-      if (result.success) {
+      if (result.success && result.user) {
         showToast(`Welcome back, ${result.user.name}!`, 'success');
-        if (role === 'admin' || result.user.role === 'admin') {
-          router.push('/admin/dashboard');
-        } else if (role === 'driver' || result.user.role === 'driver') {
-          router.push('/driver/dashboard');
-        } else {
-          router.push('/user/dashboard');
+        const userRole = (result.user.role || '').toLowerCase();
+
+        switch (userRole) {
+          case 'admin':
+            router.push('/admin/dashboard');
+            break;
+          case 'driver':
+            router.push('/driver/dashboard');
+            break;
+          case 'user':
+          case 'passenger':
+          default:
+            router.push('/user/dashboard');
+            break;
         }
       } else {
         setErrorMessage(result.error || 'Invalid login credentials.');
+        showToast(result.error || 'Invalid credentials', 'error');
         setIsLoading(false);
       }
-    }, 400);
+    } catch (err) {
+      setErrorMessage('Login failed. Please check your network.');
+      setIsLoading(false);
+    }
   };
 
-  const handleQuickLogin = (demoRole) => {
+  const handleQuickLogin = async (demoRole) => {
+    setIsLoading(true);
+    setErrorMessage('');
+
+    let targetEmail = 'ravi@gmail.com';
+    let targetPassword = 'password123';
+    let targetRole = 'user';
+
     if (demoRole === 'user') {
-      const u = getUsers().find((x) => x.id === 'U101') || getUsers()[0];
-      setCurrentUser(u);
-      showToast('Logged in as Passenger (Ravi Kumar)', 'success');
-      router.push('/user/dashboard');
+      targetEmail = 'ravi@gmail.com';
+      targetPassword = 'password123';
+      targetRole = 'user';
     } else if (demoRole === 'driver_car') {
-      const d = getDrivers().find((x) => x.id === 'D101') || getDrivers()[0];
-      setCurrentUser(d);
-      showToast('Logged in as Car Driver (Arun Prakash)', 'success');
-      router.push('/driver/dashboard');
+      targetEmail = 'arun@gmail.com';
+      targetPassword = 'password123';
+      targetRole = 'driver';
     } else if (demoRole === 'driver_bike') {
-      const d = getDrivers().find((x) => x.id === 'D102') || getDrivers()[1];
-      setCurrentUser(d);
-      showToast('Logged in as Bike Driver (Priya Sundaram)', 'success');
-      router.push('/driver/dashboard');
+      targetEmail = 'priya@gmail.com';
+      targetPassword = 'password123';
+      targetRole = 'driver';
     } else if (demoRole === 'admin') {
-      const admin = getUsers().find((x) => x.role === 'admin') || {
-        id: 'ADM001',
-        name: 'System Administrator',
-        email: 'admin@rideshare.com',
-        role: 'admin',
-        status: 'Active'
-      };
-      setCurrentUser(admin);
-      showToast('Logged in as Administrator', 'success');
-      router.push('/admin/dashboard');
+      targetEmail = 'admin@rideshare.com';
+      targetPassword = 'adminpassword';
+      targetRole = 'admin';
+    }
+
+    try {
+      const result = await authenticate(targetEmail, targetPassword, targetRole);
+      if (result.success && result.user) {
+        showToast(`Logged in as ${result.user.name} (${result.user.role.toUpperCase()})`, 'success');
+        if (targetRole === 'admin') router.push('/admin/dashboard');
+        else if (targetRole === 'driver') router.push('/driver/dashboard');
+        else router.push('/user/dashboard');
+      } else {
+        showToast(result.error || 'Quick login failed.', 'error');
+        setIsLoading(false);
+      }
+    } catch (err) {
+      showToast('Quick login network error.', 'error');
+      setIsLoading(false);
     }
   };
 
@@ -119,7 +136,7 @@ export default function LoginPage() {
               {role === 'admin' ? <ShieldCheck size={26} /> : role === 'driver' ? <Car size={26} /> : <User size={26} />}
             </div>
             <h1 className="auth-title">Sign In to RideShare</h1>
-            <p className="auth-subtitle">Choose your account role and enter credentials</p>
+            <p className="auth-subtitle">Enter your credentials to access your account</p>
           </div>
 
           {/* Role Tabs */}
@@ -130,7 +147,7 @@ export default function LoginPage() {
               onClick={() => handleRoleChange('user')}
             >
               <User size={14} />
-              <span>Passenger</span>
+              <span>Passenger (USER)</span>
             </button>
 
             <button
@@ -139,7 +156,7 @@ export default function LoginPage() {
               onClick={() => handleRoleChange('driver')}
             >
               <Car size={14} />
-              <span>Driver</span>
+              <span>Driver (DRIVER)</span>
             </button>
 
             <button
@@ -148,7 +165,7 @@ export default function LoginPage() {
               onClick={() => handleRoleChange('admin')}
             >
               <ShieldCheck size={14} />
-              <span>Admin</span>
+              <span>Admin (ADMIN)</span>
             </button>
           </div>
 
@@ -163,14 +180,14 @@ export default function LoginPage() {
 
             <form onSubmit={handleLogin}>
               <div className="form-group">
-                <label className="form-label">Email or Phone Number</label>
+                <label className="form-label">Email Address or Phone Number</label>
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
                     className="form-input"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@gmail.com"
+                    placeholder="e.g. name@gmail.com or 9876543210"
                     required
                   />
                 </div>
@@ -184,7 +201,7 @@ export default function LoginPage() {
                     className="form-input"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="Enter your password"
                     required
                   />
                 </div>
@@ -219,8 +236,9 @@ export default function LoginPage() {
                 type="button"
                 className="demo-quick-btn"
                 onClick={() => handleQuickLogin('user')}
+                disabled={isLoading}
               >
-                <div className="demo-btn-title">Ravi (Passenger)</div>
+                <div className="demo-btn-title">Ravi (User - U101)</div>
                 <div className="demo-btn-email">ravi@gmail.com</div>
               </button>
 
@@ -228,8 +246,9 @@ export default function LoginPage() {
                 type="button"
                 className="demo-quick-btn"
                 onClick={() => handleQuickLogin('driver_car')}
+                disabled={isLoading}
               >
-                <div className="demo-btn-title">Arun (Car Driver)</div>
+                <div className="demo-btn-title">Arun (Driver - D101)</div>
                 <div className="demo-btn-email">arun@gmail.com</div>
               </button>
 
@@ -237,8 +256,9 @@ export default function LoginPage() {
                 type="button"
                 className="demo-quick-btn"
                 onClick={() => handleQuickLogin('driver_bike')}
+                disabled={isLoading}
               >
-                <div className="demo-btn-title">Priya (Bike Driver)</div>
+                <div className="demo-btn-title">Priya (Driver - D102)</div>
                 <div className="demo-btn-email">priya@gmail.com</div>
               </button>
 
@@ -246,8 +266,9 @@ export default function LoginPage() {
                 type="button"
                 className="demo-quick-btn"
                 onClick={() => handleQuickLogin('admin')}
+                disabled={isLoading}
               >
-                <div className="demo-btn-title">Administrator</div>
+                <div className="demo-btn-title">Admin (ADM001)</div>
                 <div className="demo-btn-email">admin@rideshare.com</div>
               </button>
             </div>

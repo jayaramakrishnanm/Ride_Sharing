@@ -35,18 +35,33 @@ export default function Navbar({ onToggleSidebar }) {
   const [isSwitchRoleOpen, setIsSwitchRoleOpen] = useState(false);
 
   const syncData = () => {
+    if (pathname === '/') {
+      // Home page is strictly public: no logged in persona
+      setCurrentUserState(null);
+      setNotifications([]);
+      return;
+    }
+
     const user = getCurrentUser();
     setCurrentUserState(user);
     if (user) {
       setNotifications(getNotifications(user.id));
     } else {
-      setNotifications(getNotifications());
+      setNotifications([]);
     }
   };
 
   useEffect(() => {
     initializeStorage();
-    syncData();
+
+    if (pathname === '/') {
+      // Visiting the public homepage clears any leftover previous session
+      logout();
+      setCurrentUserState(null);
+      setNotifications([]);
+    } else {
+      syncData();
+    }
 
     const handleStorageUpdate = () => {
       syncData();
@@ -84,11 +99,12 @@ export default function Navbar({ onToggleSidebar }) {
       setCurrentUser(d);
       router.push('/driver/dashboard');
     } else if (role === 'admin') {
-      const admin = getUsers().find((x) => x.role === 'admin') || {
+      const admin = {
         id: 'ADM001',
         name: 'System Administrator',
         email: 'admin@rideshare.com',
         phone: '9999988888',
+        password: 'adminpassword',
         role: 'admin',
         status: 'Active'
       };
@@ -152,28 +168,28 @@ export default function Navbar({ onToggleSidebar }) {
                 <button className="demo-menu-item" onClick={() => handleQuickSwitch('user')}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <UserIcon size={14} style={{ color: 'var(--primary)' }} />
-                    <span>Ravi (Passenger)</span>
+                    <span>Ravi (Passenger - U101)</span>
                   </div>
                   <span className="demo-item-badge">User</span>
                 </button>
                 <button className="demo-menu-item" onClick={() => handleQuickSwitch('driver_car')}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Car size={14} style={{ color: 'var(--sky)' }} />
-                    <span>Arun (Car Driver)</span>
+                    <span>Arun (Car Driver - D101)</span>
                   </div>
                   <span className="demo-item-badge">Car</span>
                 </button>
                 <button className="demo-menu-item" onClick={() => handleQuickSwitch('driver_bike')}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Bike size={14} style={{ color: 'var(--amber)' }} />
-                    <span>Priya (Bike Driver)</span>
+                    <span>Priya (Bike Driver - D102)</span>
                   </div>
                   <span className="demo-item-badge">Bike</span>
                 </button>
                 <button className="demo-menu-item" onClick={() => handleQuickSwitch('admin')}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <ShieldCheck size={14} style={{ color: 'var(--purple)' }} />
-                    <span>System Admin</span>
+                    <span>System Admin (ADM001)</span>
                   </div>
                   <span className="demo-item-badge">Admin</span>
                 </button>
@@ -181,14 +197,16 @@ export default function Navbar({ onToggleSidebar }) {
             )}
           </div>
 
-          {/* Notifications Trigger */}
-          <button className="btn-icon-badge" onClick={() => setIsNotifOpen(true)}>
-            <Bell size={20} />
-            {unreadCount > 0 && <span className="badge-counter">{unreadCount}</span>}
-          </button>
+          {/* Notifications Trigger (Only when logged in on dashboard pages) */}
+          {currentUser && pathname !== '/' && (
+            <button className="btn-icon-badge" onClick={() => setIsNotifOpen(true)}>
+              <Bell size={20} />
+              {unreadCount > 0 && <span className="badge-counter">{unreadCount}</span>}
+            </button>
+          )}
 
           {/* Profile Dropdown / Sign in */}
-          {currentUser ? (
+          {currentUser && pathname !== '/' ? (
             <div className="profile-dropdown-wrapper">
               <button
                 className="profile-trigger"

@@ -137,3 +137,88 @@
   background-color: #e2e8f0;
   color: var(--text-main);
 }
+
+/* Password & Credentials UI in Admin */
+.password-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+
+.password-text {
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  color: var(--navy);
+  min-width: 60px;
+}
+
+.password-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  color: var(--text-muted);
+  background: transparent;
+  transition: all 0.15s;
+}
+
+.password-btn:hover {
+  background-color: #e2e8f0;
+  color: var(--purple);
+}
+
+.admin-details-grid {
+  background-color: #f8fafc;
+  border: 1px solid var(--border-color);
+  padding: 18px;
+  border-radius: var(--radius-md);
+  margin: 16px 0;
+  text-align: left;
+  font-size: 0.8125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px dashed #e2e8f0;
+  padding-bottom: 6px;
+}
+
+.admin-detail-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.admin-detail-label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.admin-detail-value {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.password-box-highlight {
+  background-color: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 12px 0;
+}
+

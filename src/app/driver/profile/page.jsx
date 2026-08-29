@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { getCurrentUser, updateDriver } from '@/lib/storage';
 import { formatCurrency } from '@/lib/fareCalculator';
+import { formatLastLogin, formatJoinedDate } from '@/lib/dateUtils';
 import { useToast } from '@/components/Toast';
-import { Car, Bike, Phone, Star, ShieldCheck, DollarSign, Save } from 'lucide-react';
+import { Car, Bike, Phone, Star, ShieldCheck, DollarSign, Save, Calendar, LogIn } from 'lucide-react';
 
 export default function DriverProfilePage() {
   const { showToast } = useToast();
@@ -29,7 +30,7 @@ export default function DriverProfilePage() {
     }
   }, []);
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     if (!driver) return;
 
@@ -38,7 +39,7 @@ export default function DriverProfilePage() {
       return;
     }
 
-    const updated = updateDriver(driver.id, {
+    const updated = await updateDriver(driver.id, {
       name: name.trim(),
       phone: phone.trim(),
       vehicleModel: vehicleModel.trim(),
@@ -48,9 +49,11 @@ export default function DriverProfilePage() {
 
     if (updated) {
       setDriver(updated);
-      showToast('Driver profile updated successfully!', 'success');
+      showToast('Driver profile updated and saved in users.json!', 'success');
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
+    } else {
+      showToast('Failed to update driver profile.', 'error');
     }
   };
 
@@ -71,13 +74,17 @@ export default function DriverProfilePage() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 900 }}>{driver.name}</h2>
-              <span className="badge badge-info">{driver.vehicleType} Driver</span>
+              <span className="badge badge-info">{driver.vehicleType} Driver ({driver.id})</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
               <span>ID: <strong style={{ fontFamily: 'monospace' }}>{driver.id}</strong></span>
               <span>•</span>
-              <span style={{ color: 'var(--amber)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '2px' }}>
-                <Star size={12} fill="var(--amber)" /> {driver.rating || 4.9}
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Calendar size={12} /> Joined Date: <strong>{formatJoinedDate(driver.joinedDate)}</strong>
+              </span>
+              <span>•</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <LogIn size={12} /> Last Login: <strong>{formatLastLogin(driver.lastLogin)}</strong>
               </span>
               <span>•</span>
               <span>Total Earnings: <strong>{formatCurrency(driver.totalEarnings || 0)}</strong></span>

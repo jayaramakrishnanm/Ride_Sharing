@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { saveUser, saveDriver, setCurrentUser } from '@/lib/storage';
+import { registerUser, registerDriver } from '@/lib/storage';
 import { useToast } from '@/components/Toast';
 import { 
   User, 
@@ -13,8 +13,7 @@ import {
   Bike, 
   ShieldCheck, 
   ArrowRight, 
-  AlertCircle, 
-  CheckCircle2 
+  AlertCircle 
 } from 'lucide-react';
 
 export default function RegisterPage() {
@@ -33,19 +32,28 @@ export default function RegisterPage() {
   const [vehicleModel, setVehicleModel] = useState('');
   const [vehicleNumber, setVehicleNumber] = useState('');
   const [licenseNumber, setLicenseNumber] = useState('');
+  const [vehicleColor, setVehicleColor] = useState('');
+  const [drivingExperience, setDrivingExperience] = useState(3);
 
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleRegister = (e) => {
+  const validateEmail = (val) => {
+    return String(val)
+      .toLowerCase()
+      .match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+  };
+
+  const handleRegister = async (e) => {
     e.preventDefault();
     setErrorMessage('');
 
+    // 1. Validate required fields
     if (!name.trim()) {
       setErrorMessage('Please enter your full name.');
       return;
     }
-    if (!email.trim() || !email.includes('@')) {
+    if (!email.trim() || !validateEmail(email.trim())) {
       setErrorMessage('Please provide a valid email address.');
       return;
     }
@@ -71,47 +79,53 @@ export default function RegisterPage() {
 
     setIsLoading(true);
 
-    setTimeout(() => {
+    try {
       if (role === 'driver') {
-        const newDriver = saveDriver({
+        const result = await registerDriver({
           name: name.trim(),
           email: email.trim().toLowerCase(),
           phone: phone.trim(),
           password,
-          role: 'driver',
           vehicleType,
           vehicleModel: vehicleModel.trim(),
           vehicleNumber: vehicleNumber.trim().toUpperCase(),
+          vehicleColor: vehicleColor.trim() || 'Standard',
           licenseNumber: licenseNumber.trim().toUpperCase() || 'DL-PENDING',
-          available: true,
-          rating: 5.0,
-          totalRides: 0,
-          completedToday: 0,
-          earningsToday: 0,
-          totalEarnings: 0,
-          status: 'Active'
+          drivingExperience: Number(drivingExperience) || 1
         });
 
-        setCurrentUser(newDriver);
-        showToast('Driver account created successfully!', 'success');
+        if (!result.success) {
+          setErrorMessage(result.error);
+          showToast(result.error, 'error');
+          setIsLoading(false);
+          return;
+        }
+
+        showToast(`Driver account registered successfully (${result.user.id})! Saved to users.json`, 'success');
         router.push('/driver/dashboard');
       } else {
-        const newUser = saveUser({
+        const result = await registerUser({
           name: name.trim(),
           email: email.trim().toLowerCase(),
           phone: phone.trim(),
-          password,
-          role: 'user',
-          status: 'Active',
-          rating: 5.0,
-          totalRides: 0
+          password
         });
 
-        setCurrentUser(newUser);
-        showToast('Passenger account created successfully!', 'success');
+        if (!result.success) {
+          setErrorMessage(result.error);
+          showToast(result.error, 'error');
+          setIsLoading(false);
+          return;
+        }
+
+        showToast(`User registered successfully (${result.user.id})! Saved to users.json`, 'success');
         router.push('/user/dashboard');
       }
-    }, 400);
+    } catch (err) {
+      setErrorMessage('Registration failed. Please try again.');
+      showToast('Registration failed.', 'error');
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -125,7 +139,7 @@ export default function RegisterPage() {
               {role === 'driver' ? <Car size={26} /> : <User size={26} />}
             </div>
             <h1 className="auth-title">Create an Account</h1>
-            <p className="auth-subtitle">Join RideShare as a Passenger or Driver Partner</p>
+            <p className="auth-subtitle">Permanent JSON Registration in users.json</p>
           </div>
 
           {/* Role selector tabs */}
@@ -139,7 +153,7 @@ export default function RegisterPage() {
               }}
             >
               <User size={16} />
-              <span>Passenger / User</span>
+              <span>Passenger / User (U###)</span>
             </button>
 
             <button
@@ -151,7 +165,7 @@ export default function RegisterPage() {
               }}
             >
               <Car size={16} />
-              <span>Driver Partner</span>
+              <span>Driver Partner (D###)</span>
             </button>
           </div>
 
@@ -172,7 +186,7 @@ export default function RegisterPage() {
                     className="form-input"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Suresh Kumar"
+                    placeholder="e.g. Anand Kumar"
                     required
                   />
                 </div>
@@ -209,7 +223,7 @@ export default function RegisterPage() {
                   <input
                     type="text"
                     className="form-input"
-                    value={role === 'driver' ? 'Driver Partner' : 'Passenger User'}
+                    value={role === 'driver' ? 'Driver Partner (D###)' : 'Passenger User (U###)'}
                     disabled
                     style={{ backgroundColor: 'var(--bg-subtle)' }}
                   />
@@ -255,7 +269,7 @@ export default function RegisterPage() {
                         className="form-input"
                         value={vehicleModel}
                         onChange={(e) => setVehicleModel(e.target.value)}
-                        placeholder={vehicleType === 'Car' ? 'e.g. Maruti Swift' : 'e.g. Honda Activa 6G'}
+                        placeholder={vehicleType === 'Car' ? 'e.g. Hyundai i20' : 'e.g. TVS Raider 125'}
                         required={role === 'driver'}
                       />
                     </div>
@@ -267,23 +281,36 @@ export default function RegisterPage() {
                         className="form-input"
                         value={vehicleNumber}
                         onChange={(e) => setVehicleNumber(e.target.value)}
-                        placeholder="TN09AB1234"
+                        placeholder="TN37AB1234"
                         style={{ textTransform: 'uppercase', fontFamily: 'monospace' }}
                         required={role === 'driver'}
                       />
                     </div>
                   </div>
 
-                  <div className="form-group">
-                    <label className="form-label">Driving License Number</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={licenseNumber}
-                      onChange={(e) => setLicenseNumber(e.target.value)}
-                      placeholder="DL-TN09-2022-001"
-                      style={{ textTransform: 'uppercase', fontFamily: 'monospace' }}
-                    />
+                  <div className="auth-form-grid">
+                    <div className="form-group">
+                      <label className="form-label">Driving License Number</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={licenseNumber}
+                        onChange={(e) => setLicenseNumber(e.target.value)}
+                        placeholder="TN38 20260012345"
+                        style={{ textTransform: 'uppercase', fontFamily: 'monospace' }}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Vehicle Color</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={vehicleColor}
+                        onChange={(e) => setVehicleColor(e.target.value)}
+                        placeholder="e.g. White / Black / Silver"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -319,7 +346,7 @@ export default function RegisterPage() {
                 className="btn btn-primary btn-block btn-lg"
                 disabled={isLoading}
               >
-                <span>{isLoading ? 'Creating Account...' : 'Complete Registration'}</span>
+                <span>{isLoading ? 'Registering Account...' : 'Complete Registration'}</span>
                 <ArrowRight size={18} />
               </button>
             </form>
