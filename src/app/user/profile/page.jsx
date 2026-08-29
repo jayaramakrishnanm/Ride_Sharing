@@ -42,7 +42,7 @@ export default function UserProfilePage() {
 
     if (updated) {
       setCurrentUserState(updated);
-      showToast('Profile updated and saved to users.json successfully!', 'success');
+      showToast('Profile updated successfully!', 'success');
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
     } else {

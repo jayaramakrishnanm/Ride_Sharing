@@ -111,7 +111,7 @@ export default function AdminDriversPage() {
   const handleToggleActive = async (id, currentStatus) => {
     const nextStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
     await updateDriver(id, { status: nextStatus });
-    showToast(`Driver account marked as ${nextStatus} in users.json.`, 'info');
+    showToast(`Driver account marked as ${nextStatus}.`, 'info');
     loadData();
   };
 
@@ -180,7 +180,7 @@ export default function AdminDriversPage() {
     });
 
     if (updated) {
-      showToast(`Driver ${updated.name} updated in users.json!`, 'success');
+      showToast(`Driver ${updated.name} updated successfully!`, 'success');
       setEditingDriver(null);
       loadData();
     } else {
@@ -221,16 +221,16 @@ export default function AdminDriversPage() {
       return;
     }
 
-    showToast(`New driver partner ${result.user.id} registered and saved to users.json!`, 'success');
+    showToast(`New driver partner ${result.user.name || result.user.id} registered successfully!`, 'success');
     setIsAddOpen(false);
     loadData();
   };
 
   const handleDelete = async (id, name) => {
-    if (window.confirm(`Are you sure you want to permanently remove driver ${name} (${id}) from users.json?`)) {
+    if (window.confirm(`Are you sure you want to remove driver ${name}?`)) {
       const ok = await deleteDriver(id);
       if (ok) {
-        showToast(`Driver ${name} removed from users.json.`, 'info');
+        showToast(`Driver ${name} removed successfully.`, 'info');
         loadData();
       } else {
         showToast('Failed to delete driver.', 'error');
@@ -262,7 +262,7 @@ export default function AdminDriversPage() {
       <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 className="page-title">Driver Partner Management</h1>
-          <p className="page-subtitle">Inspect, edit, register, and view complete driver credentials, fleet specs, and login activity from users.json</p>
+          <p className="page-subtitle">Inspect, edit, register, and view complete driver profiles, fleet specs, and login activity</p>
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -708,7 +708,7 @@ export default function AdminDriversPage() {
                 </button>
               </div>
               <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
-                Admin can directly inspect or change driver password. Saved to users.json.
+                Administrator can view or update the driver password.
               </span>
             </div>
 

@@ -102,10 +102,6 @@ export default function LoginPage() {
       targetEmail = 'priya@gmail.com';
       targetPassword = 'password123';
       targetRole = 'driver';
-    } else if (demoRole === 'admin') {
-      targetEmail = 'admin@rideshare.com';
-      targetPassword = 'adminpassword';
-      targetRole = 'admin';
     }
 
     try {
@@ -217,12 +213,14 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <div className="auth-footer">
-              Don&apos;t have an account?{' '}
-              <Link href="/register" className="auth-footer-link">
-                Register here
-              </Link>
-            </div>
+            {role !== 'admin' && (
+              <div className="auth-footer">
+                Don&apos;t have an account?{' '}
+                <Link href="/register" className="auth-footer-link">
+                  Register here
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* 1-Click Quick Demo Login Switcher Panel */}
@@ -260,16 +258,6 @@ export default function LoginPage() {
               >
                 <div className="demo-btn-title">Priya (Driver - D102)</div>
                 <div className="demo-btn-email">priya@gmail.com</div>
-              </button>
-
-              <button
-                type="button"
-                className="demo-quick-btn"
-                onClick={() => handleQuickLogin('admin')}
-                disabled={isLoading}
-              >
-                <div className="demo-btn-title">Admin (ADM001)</div>
-                <div className="demo-btn-email">admin@rideshare.com</div>
               </button>
             </div>
           </div>

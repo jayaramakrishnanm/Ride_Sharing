@@ -322,7 +322,7 @@ export default function BookingForm({
 
           <div style={{ backgroundColor: 'var(--primary-light)', padding: '10px 14px', borderRadius: '8px', fontSize: '0.6875rem', color: 'var(--primary-text)', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <ShieldCheck size={14} />
-            <span>Transparent pricing • Zero surge charges during demo mode.</span>
+            <span>Transparent pricing • Zero surge charges.</span>
           </div>
         </div>
 

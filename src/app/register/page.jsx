@@ -101,7 +101,7 @@ export default function RegisterPage() {
           return;
         }
 
-        showToast(`Driver account registered successfully (${result.user.id})! Saved to users.json`, 'success');
+        showToast('Driver account registered successfully!', 'success');
         router.push('/driver/dashboard');
       } else {
         const result = await registerUser({
@@ -118,7 +118,7 @@ export default function RegisterPage() {
           return;
         }
 
-        showToast(`User registered successfully (${result.user.id})! Saved to users.json`, 'success');
+        showToast('User account registered successfully!', 'success');
         router.push('/user/dashboard');
       }
     } catch (err) {
@@ -139,7 +139,7 @@ export default function RegisterPage() {
               {role === 'driver' ? <Car size={26} /> : <User size={26} />}
             </div>
             <h1 className="auth-title">Create an Account</h1>
-            <p className="auth-subtitle">Permanent JSON Registration in users.json</p>
+            <p className="auth-subtitle">Join as a passenger or driver partner</p>
           </div>
 
           {/* Role selector tabs */}
@@ -153,7 +153,7 @@ export default function RegisterPage() {
               }}
             >
               <User size={16} />
-              <span>Passenger / User (U###)</span>
+              <span>Passenger / User</span>
             </button>
 
             <button
@@ -165,7 +165,7 @@ export default function RegisterPage() {
               }}
             >
               <Car size={16} />
-              <span>Driver Partner (D###)</span>
+              <span>Driver Partner</span>
             </button>
           </div>
 

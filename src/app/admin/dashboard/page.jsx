@@ -80,9 +80,9 @@ export default function AdminDashboardPage() {
   const bikeDriversCount = drivers.filter((d) => d.vehicleType === 'Bike').length;
 
   const handleResetDatabase = () => {
-    if (window.confirm('Reset all demo data back to default state?')) {
+    if (window.confirm('Reset database back to default sample state?')) {
       initializeStorage(true);
-      showToast('Database reset to initial demo state successfully!', 'success');
+      showToast('Database reset to default state successfully!', 'success');
       loadData();
     }
   };
@@ -98,7 +98,7 @@ export default function AdminDashboardPage() {
           </div>
           <h1 className="hero-title">Platform Master Overview</h1>
           <p className="hero-desc">
-            Monitor real-time dispatch, fleet availability, user accounts from users.json, and financial volume.
+            Monitor real-time dispatch, fleet availability, user accounts, and financial volume.
           </p>
         </div>
 
@@ -108,7 +108,7 @@ export default function AdminDashboardPage() {
           style={{ backgroundColor: '#ffffff', color: 'var(--purple-text)', fontWeight: 800 }}
         >
           <RotateCcw size={16} />
-          <span>Reset Demo Data</span>
+          <span>Reset Sample Data</span>
         </button>
       </div>
 
@@ -117,14 +117,14 @@ export default function AdminDashboardPage() {
         <DashboardCard
           title="Total Users"
           value={users.length}
-          subtitle="From users.json (U###)"
+          subtitle="Registered accounts"
           icon={Users}
           color="purple"
         />
         <DashboardCard
           title="Total Drivers"
           value={drivers.length}
-          subtitle={`${drivers.filter((d) => d.available).length} Online (D###)`}
+          subtitle={`${drivers.filter((d) => d.available).length} Online`}
           icon={ShieldCheck}
           color="sky"
         />

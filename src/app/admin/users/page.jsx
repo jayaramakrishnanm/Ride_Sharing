@@ -141,7 +141,7 @@ export default function AdminUsersPage() {
     });
 
     if (updated) {
-      showToast(`User ${updated.name} updated successfully in users.json`, 'success');
+      showToast(`User ${updated.name} updated successfully.`, 'success');
       setEditingUser(null);
       loadData();
     } else {
@@ -175,16 +175,16 @@ export default function AdminUsersPage() {
       return;
     }
 
-    showToast(`New user ${result.user.id} saved to users.json!`, 'success');
+    showToast(`New user ${result.user.name || result.user.id} registered successfully!`, 'success');
     setIsAddOpen(false);
     loadData();
   };
 
   const handleDelete = async (id, name) => {
-    if (window.confirm(`Are you sure you want to permanently delete user ${name} (${id}) from users.json?`)) {
+    if (window.confirm(`Are you sure you want to delete user ${name}?`)) {
       const ok = await deleteUser(id);
       if (ok) {
-        showToast(`User ${name} deleted from users.json.`, 'info');
+        showToast(`User ${name} deleted successfully.`, 'info');
         loadData();
       } else {
         showToast('Failed to delete user.', 'error');
@@ -213,7 +213,7 @@ export default function AdminUsersPage() {
       <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 className="page-title">Passenger User Management</h1>
-          <p className="page-subtitle">Inspect, edit, register, and view all account credentials and login activity from users.json</p>
+          <p className="page-subtitle">Inspect, edit, register, and view passenger account details and login activity</p>
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -575,7 +575,7 @@ export default function AdminUsersPage() {
                 </button>
               </div>
               <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
-                Admin can directly inspect or change the password. Saved to users.json.
+                Administrator can view or update the account password.
               </span>
             </div>
 

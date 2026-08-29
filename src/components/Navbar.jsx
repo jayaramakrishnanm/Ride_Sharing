@@ -98,18 +98,6 @@ export default function Navbar({ onToggleSidebar }) {
       const d = getDrivers().find((x) => x.id === 'D102') || getDrivers()[1];
       setCurrentUser(d);
       router.push('/driver/dashboard');
-    } else if (role === 'admin') {
-      const admin = {
-        id: 'ADM001',
-        name: 'System Administrator',
-        email: 'admin@rideshare.com',
-        phone: '9999988888',
-        password: 'adminpassword',
-        role: 'admin',
-        status: 'Active'
-      };
-      setCurrentUser(admin);
-      router.push('/admin/dashboard');
     }
   };
 
@@ -185,13 +173,6 @@ export default function Navbar({ onToggleSidebar }) {
                     <span>Priya (Bike Driver - D102)</span>
                   </div>
                   <span className="demo-item-badge">Bike</span>
-                </button>
-                <button className="demo-menu-item" onClick={() => handleQuickSwitch('admin')}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <ShieldCheck size={14} style={{ color: 'var(--purple)' }} />
-                    <span>System Admin (ADM001)</span>
-                  </div>
-                  <span className="demo-item-badge">Admin</span>
                 </button>
               </div>
             )}

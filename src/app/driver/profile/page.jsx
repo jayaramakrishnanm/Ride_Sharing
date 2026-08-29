@@ -49,7 +49,7 @@ export default function DriverProfilePage() {
 
     if (updated) {
       setDriver(updated);
-      showToast('Driver profile updated and saved in users.json!', 'success');
+      showToast('Driver profile updated successfully!', 'success');
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
     } else {

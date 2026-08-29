@@ -211,7 +211,7 @@ export async function POST(request) {
 
     if (!writeOk) {
       return Response.json(
-        { success: false, error: 'Failed to write account to JSON file.' },
+        { success: false, error: 'Failed to save account.' },
         { status: 500 }
       );
     }
